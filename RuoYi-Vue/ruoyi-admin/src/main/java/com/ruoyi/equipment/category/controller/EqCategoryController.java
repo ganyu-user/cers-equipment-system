@@ -36,6 +36,7 @@ public class EqCategoryController extends BaseController
 
     /**
      * 查询设备分类列表
+     *
      */
     @PreAuthorize("@ss.hasPermi('system:category:list')")
     @GetMapping("/list")

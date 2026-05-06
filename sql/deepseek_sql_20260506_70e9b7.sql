@@ -1,0 +1,20 @@
+CREATE TABLE `eq_equipment` (
+  `equipment_id`   bigint(20)    NOT NULL AUTO_INCREMENT COMMENT '设备ID',
+  `equipment_name` varchar(100)  NOT NULL COMMENT '设备名称',
+  `category_id`    bigint(20)    NOT NULL COMMENT '分类ID',
+  `image`          varchar(255)  DEFAULT '' COMMENT '设备图片URL',
+  `total_stock`    int(11)       DEFAULT 0 COMMENT '设备总库存',
+  `remain_stock`   int(11)       DEFAULT 0 COMMENT '剩余可用数量',
+  `status`         char(1)       DEFAULT '0' COMMENT '维修状态（0正常 1维修中）',
+  `location`       varchar(200)  DEFAULT '' COMMENT '存放地点',
+  `description`    text          COMMENT '设备描述/备注',
+  `del_flag`       char(1)       DEFAULT '0' COMMENT '删除标志（0正常 2删除）',
+  `create_by`      varchar(64)   DEFAULT '' COMMENT '创建者',
+  `create_time`    datetime      DEFAULT NULL COMMENT '创建时间',
+  `update_by`      varchar(64)   DEFAULT '' COMMENT '更新者',
+  `update_time`    datetime      DEFAULT NULL COMMENT '更新时间',
+  `remark`         varchar(500)  DEFAULT NULL COMMENT '备注',
+  PRIMARY KEY (`equipment_id`),
+  KEY `idx_category_id` (`category_id`),
+  KEY `idx_del_flag` (`del_flag`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COMMENT='设备表';

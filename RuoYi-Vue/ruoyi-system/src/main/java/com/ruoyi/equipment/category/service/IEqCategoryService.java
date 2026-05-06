@@ -1,0 +1,61 @@
+package com.ruoyi.equipment.category.service;
+
+import java.util.List;
+import com.ruoyi.equipment.category.domain.EqCategory;
+
+/**
+ * 设备分类Service接口
+ * 
+ * @author ganyu
+ * @date 2026-05-06
+ */
+public interface IEqCategoryService 
+{
+    /**
+     * 查询设备分类
+     * 
+     * @param categoryId 设备分类主键
+     * @return 设备分类
+     */
+    public EqCategory selectEqCategoryByCategoryId(Long categoryId);
+
+    /**
+     * 查询设备分类列表
+     * 
+     * @param eqCategory 设备分类
+     * @return 设备分类集合
+     */
+    public List<EqCategory> selectEqCategoryList(EqCategory eqCategory);
+
+    /**
+     * 新增设备分类
+     * 
+     * @param eqCategory 设备分类
+     * @return 结果
+     */
+    public int insertEqCategory(EqCategory eqCategory);
+
+    /**
+     * 修改设备分类
+     * 
+     * @param eqCategory 设备分类
+     * @return 结果
+     */
+    public int updateEqCategory(EqCategory eqCategory);
+
+    /**
+     * 批量删除设备分类
+     * 
+     * @param categoryIds 需要删除的设备分类主键集合
+     * @return 结果
+     */
+    public int deleteEqCategoryByCategoryIds(Long[] categoryIds);
+
+    /**
+     * 删除设备分类信息
+     * 
+     * @param categoryId 设备分类主键
+     * @return 结果
+     */
+    public int deleteEqCategoryByCategoryId(Long categoryId);
+}

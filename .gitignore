@@ -19,5 +19,30 @@
 *.tar.gz
 *.rar
 
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
+
+# 后端
+RuoYi-Vue/target/
+RuoYi-Vue/.idea/
+RuoYi-Vue/*.iml
+RuoYi-Vue/logs/
+RuoYi-Vue/uploadPath/**
+RuoYi-Vue/.git/
+
+# 前端
+RuoYi-Vue3/node_modules/
+RuoYi-Vue3/dist/
+RuoYi-Vue3/.idea/
+RuoYi-Vue3/.vscode/
+RuoYi-Vue3/.git/
+
+# APP
+RuoYi-App/node_modules/
+RuoYi-App/unpackage/
+RuoYi-App/dist/
+RuoYi-App/.git/
+
+# 系统
+.DS_Store
+Thumbs.db
+*.tmp

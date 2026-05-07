@@ -27,6 +27,9 @@ public class RuoYiConfig
     /** 获取地址开关 */
     private static boolean addressEnabled;
 
+    /** 是否使用OSS存储 */
+    private static boolean ossEnabled = false;
+
     /** 验证码类型 */
     private static String captchaType;
 
@@ -86,6 +89,14 @@ public class RuoYiConfig
 
     public void setCaptchaType(String captchaType) {
         RuoYiConfig.captchaType = captchaType;
+    }
+
+    public static boolean isOssEnabled() {
+        return ossEnabled;
+    }
+
+    public void setOssEnabled(boolean ossEnabled) {
+        RuoYiConfig.ossEnabled = ossEnabled;
     }
 
     /**

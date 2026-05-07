@@ -72,6 +72,12 @@
       <el-table-column label="设备ID" align="center" prop="equipmentId" />
       <el-table-column label="设备名称" align="center" prop="equipmentName" />
       <el-table-column label="分类名称" align="center" prop="categoryName" />
+      <el-table-column label="设备图片" align="center" prop="image" width="100">
+        <template #default="scope">
+          <el-image v-if="scope.row.image" style="width: 50px; height: 50px" :src="scope.row.image" :preview-src-list="[scope.row.image]" fit="cover" />
+          <span v-else>-</span>
+        </template>
+      </el-table-column>
       <el-table-column label="设备总库存" align="center" prop="totalStock" />
       <el-table-column label="剩余可用数量" align="center" prop="remainStock" />
       <el-table-column label="维修状态" align="center" prop="status">
@@ -119,8 +125,8 @@
             </el-form-item>
           </el-col>
           <el-col :span="24">
-            <el-form-item label="设备图片URL" prop="image">
-              <image-upload v-model="form.image"/>
+            <el-form-item label="设备图片" prop="image">
+              <image-upload v-model="form.image" action="/system/equipment/upload/image" :limit="1"/>
             </el-form-item>
           </el-col>
           <el-col :span="24">

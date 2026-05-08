@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.equipment.order.mapper.ResOrderMapper">
+
+    <resultMap type="ResOrder" id="ResOrderResult">
+        <result property="orderId"       column="order_id"       />
+        <result property="userId"        column="user_id"        />
+        <result property="userName"      column="user_name"      />
+        <result property="reserveTime"   column="reserve_time"   />
+        <result property="reserveStatus" column="reserve_status" />
+        <result property="equipmentId"   column="equip_id"   />
+        <result property="equipmentName" column="equipment_name" />
+        <result property="equipmentImage" column="equipment_image" />
+        <result property="createBy"      column="create_by"      />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateBy"      column="update_by"      />
+        <result property="updateTime"    column="update_time"    />
+        <result property="remark"        column="remark"         />
+    </resultMap>
+
+    <sql id="selectResOrderVo">
+        select r.order_id, r.user_id, u.nick_name as user_name, r.reserve_time, r.reserve_status,
+               r.equip_id, e.equipment_name, e.image as equipment_image,
+               r.create_by, r.create_time, r.update_by, r.update_time, r.remark
+        from res_order r
+        left join sys_user u on r.user_id = u.user_id
+        left join eq_equipment e on r.equip_id = e.equipment_id
+    </sql>
+
+    <select id="selectResOrderList" parameterType="ResOrder" resultMap="ResOrderResult">
+        <include refid="selectResOrderVo"/>
+        <where>
+            <if test="userId != null "> and r.user_id = #{userId}</if>
+            <if test="reserveTime != null  and reserveTime != ''"> and r.reserve_time = #{reserveTime}</if>
+            <if test="reserveStatus != null  and reserveStatus != ''"> and r.reserve_status = #{reserveStatus}</if>
+            <if test="equipmentId != null "> and r.equip_id = #{equipmentId}</if>
+        </where>
+        order by r.create_time desc
+    </select>
+
+    <select id="selectResOrderById" parameterType="Long" resultMap="ResOrderResult">
+        <include refid="selectResOrderVo"/>
+        where r.order_id = #{orderId}
+    </select>
+
+    <insert id="insertResOrder" parameterType="ResOrder" useGeneratedKeys="true" keyProperty="orderId">
+        insert into res_order
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="userId != null">user_id,</if>
+            <if test="reserveTime != null and reserveTime != ''">reserve_time,</if>
+            <if test="reserveStatus != null and reserveStatus != ''">reserve_status,</if>
+            <if test="equipmentId != null">equip_id,</if>
+            <if test="remark != null">remark,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="userId != null">#{userId},</if>
+            <if test="reserveTime != null and reserveTime != ''">#{reserveTime},</if>
+            <if test="reserveStatus != null and reserveStatus != ''">#{reserveStatus},</if>
+            <if test="equipmentId != null">#{equipmentId},</if>
+            <if test="remark != null">#{remark},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+        </trim>
+    </insert>
+
+    <update id="updateResOrder" parameterType="ResOrder">
+        update res_order
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="userId != null">user_id = #{userId},</if>
+            <if test="reserveTime != null and reserveTime != ''">reserve_time = #{reserveTime},</if>
+            <if test="reserveStatus != null and reserveStatus != ''">reserve_status = #{reserveStatus},</if>
+            <if test="equipmentId != null">equip_id = #{equipmentId},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </trim>
+        where order_id = #{orderId}
+    </update>
+
+    <delete id="deleteResOrderById" parameterType="Long">
+        delete from res_order where order_id = #{orderId}
+    </delete>
+
+    <delete id="deleteResOrderByIds" parameterType="String">
+        delete from res_order where order_id in
+        <foreach item="orderId" collection="array" open="(" separator="," close=")">
+            #{orderId}
+        </foreach>
+    </delete>
+
+</mapper>

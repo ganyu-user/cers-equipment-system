@@ -93,4 +93,16 @@ public class EqCategoryServiceImpl implements IEqCategoryService
     {
         return eqCategoryMapper.deleteEqCategoryByCategoryId(categoryId);
     }
+
+    /**
+     * 查询指定分类的所有子孙分类ID（包含自身）
+     * 
+     * @param categoryId 分类ID
+     * @return 子孙分类ID集合
+     */
+    @Override
+    public List<Long> selectChildrenCategoryIds(Long categoryId)
+    {
+        return eqCategoryMapper.selectChildrenCategoryIds(categoryId);
+    }
 }

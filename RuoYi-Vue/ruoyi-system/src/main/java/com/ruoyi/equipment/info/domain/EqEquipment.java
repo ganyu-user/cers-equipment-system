@@ -6,6 +6,8 @@ import org.apache.commons.lang3.builder.ToStringStyle;
 import com.ruoyi.common.annotation.Excel;
 import com.ruoyi.common.core.domain.BaseEntity;
 
+import java.util.List;
+
 /**
  * 设备对象 eq_equipment
  * 
@@ -55,6 +57,9 @@ public class EqEquipment extends BaseEntity
 
     /** 删除标志（0正常 2删除） */
     private String delFlag;
+
+    /** 分类ID列表（用于子树查询，非数据库字段） */
+    private List<Long> categoryIds;
 
     public void setEquipmentId(Long equipmentId) 
     {
@@ -164,6 +169,16 @@ public class EqEquipment extends BaseEntity
     public String getDelFlag() 
     {
         return delFlag;
+    }
+
+    public void setCategoryIds(List<Long> categoryIds)
+    {
+        this.categoryIds = categoryIds;
+    }
+
+    public List<Long> getCategoryIds() 
+    {
+        return categoryIds;
     }
 
     @Override

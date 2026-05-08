@@ -91,4 +91,11 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             #{categoryId}
         </foreach>
     </delete>
+
+    <select id="selectChildrenCategoryIds" parameterType="Long" resultType="Long">
+        select category_id from eq_category
+        where category_id = #{categoryId}
+           or parent_id = #{categoryId}
+           or find_in_set(#{categoryId}, replace(ancestors, ' ', '')) &gt; 0
+    </select>
 </mapper>

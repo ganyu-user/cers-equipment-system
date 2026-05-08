@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.Iterator;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -31,8 +30,11 @@ import com.ruoyi.common.utils.poi.ExcelUtil;
 @RequestMapping("/system/category")
 public class EqCategoryController extends BaseController
 {
-    @Autowired
-    private IEqCategoryService eqCategoryService;
+    private final IEqCategoryService eqCategoryService;
+
+    public EqCategoryController(IEqCategoryService eqCategoryService) {
+        this.eqCategoryService = eqCategoryService;
+    }
 
     /**
      * 查询设备分类列表
@@ -112,9 +114,6 @@ public class EqCategoryController extends BaseController
         return success(getCategoryTree(list));
     }
 
-    /**
-     * 构建前端所需要树结构
-     */
     private List<EqCategory> getCategoryTree(List<EqCategory> list)
     {
         List<EqCategory> returnList = new java.util.ArrayList<EqCategory>();
@@ -125,8 +124,7 @@ public class EqCategoryController extends BaseController
         }
         for (Iterator<EqCategory> iterator = list.iterator(); iterator.hasNext();)
         {
-            EqCategory category = (EqCategory) iterator.next();
-            // 如果是顶级节点, 遍历该父节点的所有子节点
+            EqCategory category = iterator.next();
             if (!tempList.contains(category.getParentId()))
             {
                 recursionFn(list, category);
@@ -140,39 +138,31 @@ public class EqCategoryController extends BaseController
         return returnList;
     }
 
-    /**
-     * 递归列表
-     */
     private void recursionFn(List<EqCategory> list, EqCategory category)
     {
-        // 得到子节点列表
         List<EqCategory> childList = getChildList(list, category);
         category.setChildren(childList);
         for (EqCategory childCategory : childList)
         {
             if (hasChild(list, childCategory))
             {
-                // 判断是否有子节点
                 Iterator<EqCategory> it = childList.iterator();
                 while (it.hasNext())
                 {
-                    EqCategory n = (EqCategory) it.next();
+                    EqCategory n = it.next();
                     recursionFn(list, n);
                 }
             }
         }
     }
 
-    /**
-     * 得到子节点列表
-     */
     private List<EqCategory> getChildList(List<EqCategory> list, EqCategory category)
     {
         List<EqCategory> childList = new java.util.ArrayList<EqCategory>();
         Iterator<EqCategory> it = list.iterator();
         while (it.hasNext())
         {
-            EqCategory n = (EqCategory) it.next();
+            EqCategory n = it.next();
             if (n.getParentId() != null && n.getParentId().longValue() == category.getCategoryId().longValue())
             {
                 childList.add(n);
@@ -181,9 +171,6 @@ public class EqCategoryController extends BaseController
         return childList;
     }
 
-    /**
-     * 判断是否有子节点
-     */
     private boolean hasChild(List<EqCategory> list, EqCategory category)
     {
         return getChildList(list, category).size() > 0;

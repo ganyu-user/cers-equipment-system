@@ -9,6 +9,18 @@
           @keyup.enter="handleQuery"
         />
       </el-form-item>
+      <el-form-item label="设备分类" prop="categoryId">
+        <el-tree-select
+          v-model="queryParams.categoryId"
+          :data="categoryTreeOptions"
+          :props="{ value: 'categoryId', label: 'categoryName', children: 'children' }"
+          value-key="categoryId"
+          placeholder="请选择设备分类"
+          check-strictly
+          clearable
+          style="width: 200px"
+        />
+      </el-form-item>
       <el-form-item label="维修状态" prop="status">
         <el-select v-model="queryParams.status" placeholder="请选择维修状态" clearable>
           <el-option
@@ -339,5 +351,6 @@ function handleExport() {
   }, `equipment_${new Date().getTime()}.xlsx`)
 }
 
+getTreeselect()
 getList()
 </script>

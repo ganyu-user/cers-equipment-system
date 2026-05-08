@@ -58,4 +58,12 @@ public interface EqCategoryMapper
      * @return 结果
      */
     public int deleteEqCategoryByCategoryIds(Long[] categoryIds);
+
+    /**
+     * 查询指定分类的所有子孙分类ID（包含自身）
+     * 
+     * @param categoryId 分类ID
+     * @return 子孙分类ID集合
+     */
+    public List<Long> selectChildrenCategoryIds(Long categoryId);
 }

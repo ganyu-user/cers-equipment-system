@@ -16,6 +16,8 @@
         <result property="status"         column="status"          />
         <result property="location"       column="location"        />
         <result property="description"    column="description"     />
+        <result property="trackUnit"      column="track_unit"      />
+        <result property="unitCodePrefix" column="unit_code_prefix"/>
         <result property="delFlag"        column="del_flag"        />
         <result property="createBy"       column="create_by"       />
         <result property="createTime"     column="create_time"     />
@@ -29,7 +31,8 @@
         e.equipment_id, e.equipment_name, e.category_id,
         IFNULL(c.category_name, '') as category_name,
         e.image, e.total_stock, e.remain_stock, e.status,
-        e.location, e.description, e.del_flag, e.create_by,
+        e.location, e.description, e.track_unit, e.unit_code_prefix,
+        e.del_flag, e.create_by,
         e.create_time, e.update_by, e.update_time, e.remark
         from eq_equipment e
         left join eq_category c on e.category_id = c.category_id
@@ -67,13 +70,15 @@
         insert into eq_equipment
         (
             equipment_name, category_id, image, total_stock, remain_stock,
-            status, location, description, del_flag, create_by,
+            status, location, description, track_unit, unit_code_prefix,
+            del_flag, create_by,
             create_time, update_by, update_time, remark
         )
         values
             (
                 #{equipmentName}, #{categoryId}, #{image}, #{totalStock}, #{remainStock},
-                #{status}, #{location}, #{description}, #{delFlag}, #{createBy},
+                #{status}, #{location}, #{description}, #{trackUnit}, #{unitCodePrefix},
+                #{delFlag}, #{createBy},
                 #{createTime}, #{updateBy}, #{updateTime}, #{remark}
             )
     </insert>
@@ -89,6 +94,8 @@
             <if test="status != null">status = #{status},</if>
             <if test="location != null">location = #{location},</if>
             <if test="description != null">description = #{description},</if>
+            <if test="trackUnit != null">track_unit = #{trackUnit},</if>
+            <if test="unitCodePrefix != null">unit_code_prefix = #{unitCodePrefix},</if>
             <if test="delFlag != null">del_flag = #{delFlag},</if>
             <if test="updateBy != null">update_by = #{updateBy},</if>
             <if test="updateTime != null">update_time = #{updateTime},</if>

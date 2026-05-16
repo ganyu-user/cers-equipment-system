@@ -18,6 +18,7 @@ CREATE TABLE `res_order` (
   `extend_status`           char(1)       DEFAULT '0' COMMENT '延期状态（0未申请 1延期审批中 2延期通过 3延期拒绝）',
   `extend_expect_return_time` datetime    DEFAULT NULL COMMENT '延期后的预计归还时间',
   `extend_reason`           varchar(255)  DEFAULT '' COMMENT '延期原因/审批意见',
+  `create_by`               varchar(64)   DEFAULT '' COMMENT '创建者',
   `create_time`             datetime      DEFAULT NULL COMMENT '创建时间',
   `update_by`               varchar(64)   DEFAULT '' COMMENT '更新者',
   `update_time`             datetime      DEFAULT NULL COMMENT '更新时间',

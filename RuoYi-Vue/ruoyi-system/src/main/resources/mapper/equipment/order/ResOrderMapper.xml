@@ -3,24 +3,35 @@
 <mapper namespace="com.ruoyi.equipment.order.mapper.ResOrderMapper">
 
     <resultMap type="ResOrder" id="ResOrderResult">
-        <result property="orderId"       column="order_id"       />
-        <result property="userId"        column="user_id"        />
-        <result property="userName"      column="user_name"      />
-        <result property="reserveTime"   column="reserve_time"   />
-        <result property="reserveStatus" column="reserve_status" />
-        <result property="equipmentId"   column="equip_id"   />
-        <result property="equipmentName" column="equipment_name" />
-        <result property="equipmentImage" column="equipment_image" />
-        <result property="createBy"      column="create_by"      />
-        <result property="createTime"    column="create_time"    />
-        <result property="updateBy"      column="update_by"      />
-        <result property="updateTime"    column="update_time"    />
-        <result property="remark"        column="remark"         />
+        <result property="orderId"          column="order_id"          />
+        <result property="userId"           column="user_id"           />
+        <result property="userName"         column="user_name"         />
+        <result property="reserveTime"      column="reserve_time"      />
+        <result property="orderStatus"      column="order_status"      />
+        <result property="equipmentId"      column="equip_id"          />
+        <result property="equipmentName"    column="equipment_name"    />
+        <result property="equipmentImage"   column="equipment_image"   />
+        <result property="quantity"         column="quantity"          />
+        <result property="expectReturnTime" column="expect_return_time"/>
+        <result property="assignedUnitCodes" column="assigned_unit_codes"/>
+        <result property="approverId"       column="approver_id"       />
+        <result property="approverName"     column="approver_name"     />
+        <result property="approveTime"      column="approve_time"      />
+        <result property="rejectReason"     column="reject_reason"     />
+        <result property="returnStatus"     column="return_status"     />
+        <result property="createBy"         column="create_by"         />
+        <result property="createTime"       column="create_time"       />
+        <result property="updateBy"         column="update_by"         />
+        <result property="updateTime"       column="update_time"       />
+        <result property="remark"           column="remark"            />
     </resultMap>
 
     <sql id="selectResOrderVo">
-        select r.order_id, r.user_id, u.nick_name as user_name, r.reserve_time, r.reserve_status,
+        select r.order_id, r.user_id, u.nick_name as user_name, r.reserve_time, r.order_status,
                r.equip_id, e.equipment_name, e.image as equipment_image,
+               r.quantity, r.expect_return_time,
+               r.assigned_unit_codes, r.approver_id, r.approver_name,
+               r.approve_time, r.reject_reason, r.return_status,
                r.create_by, r.create_time, r.update_by, r.update_time, r.remark
         from res_order r
         left join sys_user u on r.user_id = u.user_id
@@ -32,8 +43,9 @@
         <where>
             <if test="userId != null "> and r.user_id = #{userId}</if>
             <if test="reserveTime != null  and reserveTime != ''"> and r.reserve_time = #{reserveTime}</if>
-            <if test="reserveStatus != null  and reserveStatus != ''"> and r.reserve_status = #{reserveStatus}</if>
+            <if test="orderStatus != null  and orderStatus != ''"> and r.order_status = #{orderStatus}</if>
             <if test="equipmentId != null "> and r.equip_id = #{equipmentId}</if>
+            <if test="returnStatus != null  and returnStatus != ''"> and r.return_status = #{returnStatus}</if>
         </where>
         order by r.create_time desc
     </select>
@@ -43,13 +55,28 @@
         where r.order_id = #{orderId}
     </select>
 
+    <select id="selectResOrderListByUserId" parameterType="ResOrder" resultMap="ResOrderResult">
+        <include refid="selectResOrderVo"/>
+        <where>
+            <if test="userId != null "> and r.user_id = #{userId}</if>
+            <if test="orderStatus != null  and orderStatus != ''"> and r.order_status = #{orderStatus}</if>
+            <if test="equipmentId != null "> and r.equip_id = #{equipmentId}</if>
+            <if test="returnStatus != null  and returnStatus != ''"> and r.return_status = #{returnStatus}</if>
+        </where>
+        order by r.create_time desc
+    </select>
+
     <insert id="insertResOrder" parameterType="ResOrder" useGeneratedKeys="true" keyProperty="orderId">
         insert into res_order
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="userId != null">user_id,</if>
             <if test="reserveTime != null and reserveTime != ''">reserve_time,</if>
-            <if test="reserveStatus != null and reserveStatus != ''">reserve_status,</if>
+            <if test="orderStatus != null and orderStatus != ''">order_status,</if>
             <if test="equipmentId != null">equip_id,</if>
+            <if test="quantity != null">quantity,</if>
+            <if test="expectReturnTime != null and expectReturnTime != ''">expect_return_time,</if>
+            <if test="assignedUnitCodes != null and assignedUnitCodes != ''">assigned_unit_codes,</if>
+            <if test="returnStatus != null">return_status,</if>
             <if test="remark != null">remark,</if>
             <if test="createBy != null">create_by,</if>
             <if test="createTime != null">create_time,</if>
@@ -59,8 +86,12 @@
         <trim prefix="values (" suffix=")" suffixOverrides=",">
             <if test="userId != null">#{userId},</if>
             <if test="reserveTime != null and reserveTime != ''">#{reserveTime},</if>
-            <if test="reserveStatus != null and reserveStatus != ''">#{reserveStatus},</if>
+            <if test="orderStatus != null and orderStatus != ''">#{orderStatus},</if>
             <if test="equipmentId != null">#{equipmentId},</if>
+            <if test="quantity != null">#{quantity},</if>
+            <if test="expectReturnTime != null and expectReturnTime != ''">#{expectReturnTime},</if>
+            <if test="assignedUnitCodes != null and assignedUnitCodes != ''">#{assignedUnitCodes},</if>
+            <if test="returnStatus != null">#{returnStatus},</if>
             <if test="remark != null">#{remark},</if>
             <if test="createBy != null">#{createBy},</if>
             <if test="createTime != null">#{createTime},</if>
@@ -74,8 +105,16 @@
         <trim prefix="SET" suffixOverrides=",">
             <if test="userId != null">user_id = #{userId},</if>
             <if test="reserveTime != null and reserveTime != ''">reserve_time = #{reserveTime},</if>
-            <if test="reserveStatus != null and reserveStatus != ''">reserve_status = #{reserveStatus},</if>
+            <if test="orderStatus != null and orderStatus != ''">order_status = #{orderStatus},</if>
             <if test="equipmentId != null">equip_id = #{equipmentId},</if>
+            <if test="quantity != null">quantity = #{quantity},</if>
+            <if test="expectReturnTime != null and expectReturnTime != ''">expect_return_time = #{expectReturnTime},</if>
+            <if test="assignedUnitCodes != null">assigned_unit_codes = #{assignedUnitCodes},</if>
+            <if test="approverId != null">approver_id = #{approverId},</if>
+            <if test="approverName != null">approver_name = #{approverName},</if>
+            <if test="approveTime != null">approve_time = #{approveTime},</if>
+            <if test="rejectReason != null">reject_reason = #{rejectReason},</if>
+            <if test="returnStatus != null">return_status = #{returnStatus},</if>
             <if test="remark != null">remark = #{remark},</if>
             <if test="updateBy != null">update_by = #{updateBy},</if>
             <if test="updateTime != null">update_time = #{updateTime},</if>

@@ -55,6 +55,13 @@ public class EqEquipment extends BaseEntity
     /** 设备描述/备注 */
     private String description;
 
+    /** 是否追踪单台设备（0=否 1=是） */
+    @Excel(name = "是否追踪", readConverterExp = "0=否,1=是")
+    private String trackUnit;
+
+    /** 编号前缀 */
+    private String unitCodePrefix;
+
     /** 删除标志（0正常 2删除） */
     private String delFlag;
 
@@ -161,6 +168,26 @@ public class EqEquipment extends BaseEntity
         return description;
     }
 
+    public void setTrackUnit(String trackUnit) 
+    {
+        this.trackUnit = trackUnit;
+    }
+
+    public String getTrackUnit() 
+    {
+        return trackUnit;
+    }
+
+    public void setUnitCodePrefix(String unitCodePrefix) 
+    {
+        this.unitCodePrefix = unitCodePrefix;
+    }
+
+    public String getUnitCodePrefix() 
+    {
+        return unitCodePrefix;
+    }
+
     public void setDelFlag(String delFlag) 
     {
         this.delFlag = delFlag;
@@ -193,6 +220,8 @@ public class EqEquipment extends BaseEntity
             .append("status", getStatus())
             .append("location", getLocation())
             .append("description", getDescription())
+            .append("trackUnit", getTrackUnit())
+            .append("unitCodePrefix", getUnitCodePrefix())
             .append("delFlag", getDelFlag())
             .append("createBy", getCreateBy())
             .append("createTime", getCreateTime())

@@ -21,6 +21,12 @@
           style="width: 200px"
         />
       </el-form-item>
+      <el-form-item label="是否追踪" prop="trackUnit">
+        <el-select v-model="queryParams.trackUnit" placeholder="请选择是否追踪" clearable>
+          <el-option label="是" value="1" />
+          <el-option label="否" value="0" />
+        </el-select>
+      </el-form-item>
       <el-form-item label="维修状态" prop="status">
         <el-select v-model="queryParams.status" placeholder="请选择维修状态" clearable>
           <el-option
@@ -92,6 +98,17 @@
       </el-table-column>
       <el-table-column label="设备总库存" align="center" prop="totalStock" />
       <el-table-column label="剩余可用数量" align="center" prop="remainStock" />
+      <el-table-column label="是否追踪" align="center" prop="trackUnit">
+        <template #default="scope">
+          <el-tag v-if="scope.row.trackUnit === '1'" type="success">是</el-tag>
+          <el-tag v-else type="info">否</el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column label="编号前缀" align="center" prop="unitCodePrefix">
+        <template #default="scope">
+          <span>{{ scope.row.unitCodePrefix || '-' }}</span>
+        </template>
+      </el-table-column>
       <el-table-column label="维修状态" align="center" prop="status">
         <template #default="scope">
           <dict-tag :options="eq_equipment_status" :value="scope.row.status"/>
@@ -116,8 +133,8 @@
     />
 
     <!-- 添加或修改设备对话框 -->
-    <el-dialog :title="title" v-model="open" width="500px" append-to-body>
-      <el-form ref="equipmentRef" :model="form" :rules="rules" label-width="100px">
+    <el-dialog :title="title" v-model="open" width="550px" append-to-body>
+      <el-form ref="equipmentRef" :model="form" :rules="rules" label-width="110px">
         <el-row>
           <el-col :span="24">
             <el-form-item label="设备名称" prop="equipmentName">
@@ -147,13 +164,29 @@
             </el-form-item>
           </el-col>
           <el-col :span="24">
+            <el-form-item label="是否追踪单台" prop="trackUnit">
+              <el-radio-group v-model="form.trackUnit" @change="onTrackUnitChange">
+                <el-radio label="1">是（追踪每台设备编号）</el-radio>
+                <el-radio label="0">否（只管理总库存）</el-radio>
+              </el-radio-group>
+            </el-form-item>
+          </el-col>
+          <el-col :span="24" v-if="form.trackUnit === '1'">
+            <el-form-item label="编号前缀" prop="unitCodePrefix">
+              <el-input v-model="form.unitCodePrefix" placeholder="用于生成编号，例如 示波器 则生成 示波器-001" />
+              <div style="color: #999; font-size: 12px; margin-top: 4px">
+                留空则默认使用设备名称作为前缀，生成格式：前缀-序号（如 示波器-001）
+              </div>
+            </el-form-item>
+          </el-col>
+          <el-col :span="24">
             <el-form-item label="维修状态" prop="status">
               <el-radio-group v-model="form.status">
                 <el-radio
                   v-for="dict in eq_equipment_status"
                   :key="dict.value"
                   :label="dict.value"
-                >{{dict.label}}</el-radio>
+                >{{ dict.label }}</el-radio>
               </el-radio-group>
             </el-form-item>
           </el-col>
@@ -208,6 +241,7 @@ const data = reactive({
     pageSize: 10,
     equipmentName: undefined,
     categoryId: undefined,
+    trackUnit: undefined,
     status: undefined,
   },
   rules: {
@@ -220,6 +254,9 @@ const data = reactive({
     totalStock: [
       { required: true, message: "设备总库存不能为空", trigger: "blur" }
     ],
+    trackUnit: [
+      { required: true, message: "是否追踪单台不能为空", trigger: "change" }
+    ],
     status: [
       { required: true, message: "维修状态不能为空", trigger: "change" }
     ],
@@ -227,6 +264,12 @@ const data = reactive({
 })
 
 const { queryParams, form, rules } = toRefs(data)
+
+function onTrackUnitChange(val) {
+  if (val !== '1') {
+    form.value.unitCodePrefix = null
+  }
+}
 
 /** 查询设备列表 */
 function getList() {
@@ -260,6 +303,8 @@ function reset() {
     image: null,
     totalStock: null,
     remainStock: null,
+    trackUnit: '0',
+    unitCodePrefix: null,
     status: null,
     location: null,
     description: null,

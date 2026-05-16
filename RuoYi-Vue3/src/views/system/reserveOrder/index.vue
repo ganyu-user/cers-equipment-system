@@ -1,8 +1,8 @@
 <template>
   <div class="app-container">
     <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="68px">
-      <el-form-item label="预约状态" prop="reserveStatus">
-        <el-select v-model="queryParams.reserveStatus" placeholder="请选择预约状态" clearable>
+      <el-form-item label="预约状态" prop="orderStatus">
+        <el-select v-model="queryParams.orderStatus" placeholder="请选择预约状态" clearable>
           <el-option
             v-for="dict in res_order_status"
             :key="dict.value"
@@ -19,6 +19,16 @@
           value-format="YYYY-MM-DD"
           clearable
         />
+      </el-form-item>
+      <el-form-item label="归还状态" prop="returnStatus">
+        <el-select v-model="queryParams.returnStatus" placeholder="请选择归还状态" clearable>
+          <el-option
+            v-for="dict in eq_return_status"
+            :key="dict.value"
+            :label="dict.label"
+            :value="dict.value"
+          />
+        </el-select>
       </el-form-item>
       <el-form-item>
         <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
@@ -73,9 +83,9 @@
       <el-table-column label="订单ID" align="center" prop="orderId" />
       <el-table-column label="用户名称" align="center" prop="userName" />
       <el-table-column label="预约时间" align="center" prop="reserveTime" width="180" />
-      <el-table-column label="预约状态" align="center" prop="reserveStatus">
+      <el-table-column label="预约状态" align="center" prop="orderStatus">
         <template #default="scope">
-          <dict-tag :options="res_order_status" :value="scope.row.reserveStatus"/>
+          <dict-tag :options="res_order_status" :value="scope.row.orderStatus"/>
         </template>
       </el-table-column>
       <el-table-column label="设备名称" align="center" prop="equipmentName" />
@@ -85,9 +95,34 @@
           <span v-else>-</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
+      <el-table-column label="预约数量" align="center" prop="quantity" />
+      <el-table-column label="分配设备编号" align="center" prop="assignedUnitCodes" width="180">
+        <template #default="scope">
+          <span>{{ scope.row.assignedUnitCodes || '-' }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="预计归还时间" align="center" prop="expectReturnTime" width="180" />
+      <el-table-column label="审批人" align="center" prop="approverName">
+        <template #default="scope">
+          <span>{{ scope.row.approverName || '-' }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="审批时间" align="center" prop="approveTime" width="180">
+        <template #default="scope">
+          <span>{{ scope.row.approveTime || '-' }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="归还状态" align="center" prop="returnStatus">
+        <template #default="scope">
+          <dict-tag :options="eq_return_status" :value="scope.row.returnStatus"/>
+        </template>
+      </el-table-column>
+      <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="260">
         <template #default="scope">
           <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['system:resOrder:edit']">修改</el-button>
+          <el-button link type="success" icon="CircleCheck" @click="handleApprove(scope.row)" v-if="scope.row.orderStatus === '0'" v-hasPermi="['system:resOrder:approve']">通过</el-button>
+          <el-button link type="danger" icon="CircleClose" @click="handleReject(scope.row)" v-if="scope.row.orderStatus === '0'" v-hasPermi="['system:resOrder:approve']">拒绝</el-button>
+          <el-button link type="warning" icon="RefreshRight" @click="handleReturn(scope.row)" v-if="scope.row.orderStatus === '4'" v-hasPermi="['system:resOrder:return']">归还</el-button>
           <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['system:resOrder:remove']">删除</el-button>
         </template>
       </el-table-column>
@@ -122,8 +157,8 @@
             </el-form-item>
           </el-col>
           <el-col :span="24">
-            <el-form-item label="预约状态" prop="reserveStatus">
-              <el-radio-group v-model="form.reserveStatus">
+            <el-form-item label="预约状态" prop="orderStatus">
+              <el-radio-group v-model="form.orderStatus">
                 <el-radio
                   v-for="dict in res_order_status"
                   :key="dict.value"
@@ -135,6 +170,22 @@
           <el-col :span="24">
             <el-form-item label="设备ID" prop="equipmentId">
               <el-input v-model="form.equipmentId" placeholder="请输入设备ID" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="24">
+            <el-form-item label="预约数量" prop="quantity">
+              <el-input v-model="form.quantity" placeholder="请输入预约数量" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="24">
+            <el-form-item label="预计归还时间" prop="expectReturnTime">
+              <el-date-picker
+                v-model="form.expectReturnTime"
+                type="date"
+                placeholder="选择预计归还时间"
+                value-format="YYYY-MM-DD"
+                style="width: 100%"
+              />
             </el-form-item>
           </el-col>
           <el-col :span="24">
@@ -151,17 +202,59 @@
         </div>
       </template>
     </el-dialog>
+
+    <!-- 拒绝对话框 -->
+    <el-dialog title="拒绝订单" v-model="rejectOpen" width="450px" append-to-body>
+      <el-form ref="rejectFormRef" :model="rejectForm" :rules="rejectRules" label-width="80px">
+        <el-form-item label="拒绝原因" prop="rejectReason">
+          <el-input v-model="rejectForm.rejectReason" type="textarea" placeholder="请输入拒绝原因" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button type="primary" @click="submitReject">确 定</el-button>
+          <el-button @click="rejectOpen = false">取 消</el-button>
+        </div>
+      </template>
+    </el-dialog>
+
+    <!-- 归还对话框 -->
+    <el-dialog title="归还设备" v-model="returnOpen" width="450px" append-to-body>
+      <el-form ref="returnFormRef" :model="returnForm" :rules="returnRules" label-width="80px">
+        <el-form-item label="归还状态" prop="returnStatus">
+          <el-radio-group v-model="returnForm.returnStatus">
+            <el-radio
+              v-for="dict in eq_return_status.slice(1)"
+              :key="dict.value"
+              :value="dict.value"
+            >{{ dict.label }}</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="损坏备注" prop="damageRemark" v-if="returnForm.returnStatus === '2'">
+          <el-input v-model="returnForm.damageRemark" type="textarea" placeholder="请描述设备损坏情况" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button type="primary" @click="submitReturn">确 定</el-button>
+          <el-button @click="returnOpen = false">取 消</el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup name="ResOrder">
-import { listResOrder, getResOrder, delResOrder, addResOrder, updateResOrder } from "@/api/system/reserveOrder"
+import { listResOrder, getResOrder, delResOrder, addResOrder, updateResOrder, approveOrder, rejectOrder, returnOrder } from "@/api/system/reserveOrder"
 
 const { proxy } = getCurrentInstance()
 const { res_order_status } = useDict('res_order_status')
+const { eq_return_status } = useDict('eq_return_status')
 
 const resOrderList = ref([])
 const open = ref(false)
+const rejectOpen = ref(false)
+const returnOpen = ref(false)
 const loading = ref(true)
 const showSearch = ref(true)
 const ids = ref([])
@@ -169,14 +262,17 @@ const single = ref(true)
 const multiple = ref(true)
 const total = ref(0)
 const title = ref("")
+const currentRejectId = ref(null)
+const currentReturnId = ref(null)
 
 const data = reactive({
   form: {},
   queryParams: {
     pageNum: 1,
     pageSize: 10,
-    reserveStatus: undefined,
-    reserveTime: undefined
+    orderStatus: undefined,
+    reserveTime: undefined,
+    returnStatus: undefined
   },
   rules: {
     userId: [
@@ -185,16 +281,33 @@ const data = reactive({
     reserveTime: [
       { required: true, message: "预约时间不能为空", trigger: "blur" }
     ],
-    reserveStatus: [
+    orderStatus: [
       { required: true, message: "预约状态不能为空", trigger: "change" }
     ],
     equipmentId: [
       { required: true, message: "设备ID不能为空", trigger: "blur" }
     ]
+  },
+  rejectForm: {
+    rejectReason: ''
+  },
+  rejectRules: {
+    rejectReason: [
+      { required: true, message: "拒绝原因不能为空", trigger: "blur" }
+    ]
+  },
+  returnForm: {
+    returnStatus: '1',
+    damageRemark: ''
+  },
+  returnRules: {
+    returnStatus: [
+      { required: true, message: "归还状态不能为空", trigger: "change" }
+    ]
   }
 })
 
-const { queryParams, form, rules } = toRefs(data)
+const { queryParams, form, rules, rejectForm, rejectRules, returnForm, returnRules } = toRefs(data)
 
 /** 查询预约订单列表 */
 function getList() {
@@ -218,8 +331,10 @@ function reset() {
     orderId: null,
     userId: null,
     reserveTime: null,
-    reserveStatus: null,
+    orderStatus: null,
     equipmentId: null,
+    quantity: null,
+    expectReturnTime: null,
     remark: null
   }
   proxy.resetForm("resOrderRef")
@@ -259,6 +374,57 @@ function handleUpdate(row) {
     form.value = response.data
     open.value = true
     title.value = "修改预约订单"
+  })
+}
+
+/** 审批通过 */
+function handleApprove(row) {
+  proxy.$modal.confirm('确认审批通过该订单？').then(function() {
+    return approveOrder(row.orderId)
+  }).then(() => {
+    getList()
+    proxy.$modal.msgSuccess("审批通过")
+  }).catch(() => {})
+}
+
+/** 拒绝 */
+function handleReject(row) {
+  currentRejectId.value = row.orderId
+  rejectForm.value.rejectReason = ''
+  rejectOpen.value = true
+}
+
+/** 提交拒绝 */
+function submitReject() {
+  proxy.$refs["rejectFormRef"].validate(valid => {
+    if (valid) {
+      rejectOrder(currentRejectId.value, rejectForm.value.rejectReason).then(() => {
+        proxy.$modal.msgSuccess("已拒绝")
+        rejectOpen.value = false
+        getList()
+      })
+    }
+  })
+}
+
+/** 归还 */
+function handleReturn(row) {
+  currentReturnId.value = row.orderId
+  returnForm.value.returnStatus = '1'
+  returnForm.value.damageRemark = ''
+  returnOpen.value = true
+}
+
+/** 提交归还 */
+function submitReturn() {
+  proxy.$refs["returnFormRef"].validate(valid => {
+    if (valid) {
+      returnOrder(currentReturnId.value, returnForm.value.returnStatus, returnForm.value.damageRemark).then(() => {
+        proxy.$modal.msgSuccess("归还成功")
+        returnOpen.value = false
+        getList()
+      })
+    }
   })
 }
 

@@ -1,6 +1,7 @@
 package com.ruoyi.equipment.order.controller;
 
 import java.util.List;
+import java.util.Map;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,6 +44,17 @@ public class ResOrderController extends BaseController
     {
         startPage();
         List<ResOrder> list = resOrderService.selectResOrderList(resOrder);
+        return getDataTable(list);
+    }
+
+    /**
+     * 查询我的预约订单
+     */
+    @GetMapping("/myList")
+    public TableDataInfo myList(ResOrder resOrder)
+    {
+        startPage();
+        List<ResOrder> list = resOrderService.selectMyOrderList(resOrder);
         return getDataTable(list);
     }
 
@@ -100,5 +112,41 @@ public class ResOrderController extends BaseController
     public AjaxResult remove(@PathVariable Long[] orderIds)
     {
         return toAjax(resOrderService.deleteResOrderByIds(orderIds));
+    }
+
+    /**
+     * 审批通过
+     */
+    @PreAuthorize("@ss.hasPermi('system:resOrder:approve')")
+    @Log(title = "预约订单审批", businessType = BusinessType.UPDATE)
+    @PutMapping("/approve/{orderId}")
+    public AjaxResult approve(@PathVariable Long orderId)
+    {
+        return toAjax(resOrderService.approveOrder(orderId));
+    }
+
+    /**
+     * 审批拒绝
+     */
+    @PreAuthorize("@ss.hasPermi('system:resOrder:approve')")
+    @Log(title = "预约订单拒绝", businessType = BusinessType.UPDATE)
+    @PutMapping("/reject/{orderId}")
+    public AjaxResult reject(@PathVariable Long orderId, @RequestBody Map<String, String> params)
+    {
+        String rejectReason = params.get("rejectReason");
+        return toAjax(resOrderService.rejectOrder(orderId, rejectReason));
+    }
+
+    /**
+     * 归还设备
+     */
+    @PreAuthorize("@ss.hasPermi('system:resOrder:return')")
+    @Log(title = "预约订单归还", businessType = BusinessType.UPDATE)
+    @PutMapping("/return/{orderId}")
+    public AjaxResult returnOrder(@PathVariable Long orderId, @RequestBody Map<String, String> params)
+    {
+        String returnStatus = params.get("returnStatus");
+        String damageRemark = params.get("damageRemark");
+        return toAjax(resOrderService.returnOrder(orderId, returnStatus, damageRemark));
     }
 }

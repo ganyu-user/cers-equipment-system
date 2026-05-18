@@ -70,10 +70,10 @@ export function rejectOrder(orderId, rejectReason) {
 }
 
 // 归还设备
-export function returnOrder(orderId, returnStatus, damageRemark) {
+export function returnOrder(orderId, returnStatus) {
   return request({
     url: '/system/resOrder/return/' + orderId,
     method: 'put',
-    data: { returnStatus, damageRemark }
+    data: { returnStatus }
   })
 }

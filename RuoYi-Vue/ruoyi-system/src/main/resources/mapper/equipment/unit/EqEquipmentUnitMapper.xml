@@ -25,6 +25,7 @@
                u.borrow_time, u.expected_return_time, u.actual_return_time,
                u.return_status, u.damage_remark, u.create_time, u.update_time
         from eq_equipment_unit u
+        left join eq_equipment e on u.equipment_id = e.equipment_id
     </sql>
 
     <select id="selectEqEquipmentUnitById" parameterType="Long" resultMap="EqEquipmentUnitResult">
@@ -40,6 +41,7 @@
             <if test="status != null  and status != ''"> and u.status = #{status}</if>
             <if test="borrowerId != null "> and u.borrower_id = #{borrowerId}</if>
             <if test="borrowOrderId != null "> and u.borrow_order_id = #{borrowOrderId}</if>
+            <if test="categoryId != null "> and e.category_id = #{categoryId}</if>
         </where>
         order by u.unit_code asc
     </select>
@@ -109,6 +111,21 @@
         where unit_id = #{unitId}
     </update>
 
+    <update id="clearBorrowInfoByUnitId" parameterType="EqEquipmentUnit">
+        update eq_equipment_unit
+        set status = '0',
+            borrower_id = null,
+            borrower_name = null,
+            borrow_order_id = null,
+            borrow_time = null,
+            expected_return_time = null,
+            actual_return_time = #{actualReturnTime},
+            return_status = #{returnStatus},
+            damage_remark = #{damageRemark},
+            update_time = #{updateTime}
+        where unit_id = #{unitId}
+    </update>
+
     <delete id="deleteEqEquipmentUnitById" parameterType="Long">
         delete from eq_equipment_unit where unit_id = #{unitId}
     </delete>
@@ -116,5 +133,19 @@
     <delete id="deleteEqEquipmentUnitByEquipmentId" parameterType="Long">
         delete from eq_equipment_unit where equipment_id = #{equipmentId}
     </delete>
+
+    <update id="batchUpdateEqEquipmentUnit" parameterType="map">
+        update eq_equipment_unit
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="status != null">status = #{status},</if>
+            <if test="returnStatus != null">return_status = #{returnStatus},</if>
+            <if test="damageRemark != null">damage_remark = #{damageRemark},</if>
+            update_time = NOW(),
+        </trim>
+        where unit_id in
+        <foreach collection="unitIds" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
 
 </mapper>

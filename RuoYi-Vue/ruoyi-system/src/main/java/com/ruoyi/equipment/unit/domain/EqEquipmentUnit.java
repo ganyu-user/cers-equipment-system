@@ -42,6 +42,8 @@ public class EqEquipmentUnit extends BaseEntity
 
     private String damageRemark;
 
+    private Long categoryId;
+
     public void setUnitId(Long unitId)
     {
         this.unitId = unitId;
@@ -160,6 +162,16 @@ public class EqEquipmentUnit extends BaseEntity
     public String getDamageRemark()
     {
         return damageRemark;
+    }
+
+    public Long getCategoryId()
+    {
+        return categoryId;
+    }
+
+    public void setCategoryId(Long categoryId)
+    {
+        this.categoryId = categoryId;
     }
 
     @Override

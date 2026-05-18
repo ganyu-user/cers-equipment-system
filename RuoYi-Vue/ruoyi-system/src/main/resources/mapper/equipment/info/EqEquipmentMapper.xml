@@ -54,6 +54,9 @@
             <if test="categoryIds == null and categoryId != null">
                 and e.category_id = #{categoryId}
             </if>
+            <if test="trackUnit != null and trackUnit != ''">
+                and e.track_unit = #{trackUnit}
+            </if>
             <if test="status != null and status != ''">
                 and e.status = #{status}
             </if>

@@ -29,5 +29,5 @@ public interface IResOrderService
 
     public int rejectOrder(Long orderId, String rejectReason);
 
-    public int returnOrder(Long orderId, String returnStatus, String damageRemark);
+    public int returnOrder(Long orderId, String returnStatus);
 }

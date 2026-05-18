@@ -75,6 +75,15 @@
       </el-col>
       <el-col :span="1.5">
         <el-button
+          type="info"
+          plain
+          icon="Operation"
+          @click="handleUnitManage"
+          v-hasPermi="['system:equipment:edit']"
+        >单元管理</el-button>
+      </el-col>
+      <el-col :span="1.5">
+        <el-button
           type="warning"
           plain
           icon="Download"
@@ -214,14 +223,158 @@
         </div>
       </template>
     </el-dialog>
+
+    <!-- 设备单元管理对话框 -->
+    <el-dialog title="设备单元管理" v-model="unitOpen" width="950px" append-to-body @open="onUnitDialogOpen">
+      <el-form :model="unitQueryParams" :inline="true" class="mb8">
+        <el-form-item label="设备分类">
+          <el-tree-select
+            v-model="unitQueryParams.categoryId"
+            :data="categoryTreeOptions"
+            :props="{ value: 'categoryId', label: 'categoryName', children: 'children' }"
+            value-key="categoryId"
+            placeholder="选择设备分类"
+            check-strictly
+            clearable
+            style="width: 180px"
+          />
+        </el-form-item>
+        <el-form-item label="设备编号">
+          <el-input v-model="unitQueryParams.unitCode" placeholder="输入单元编号" clearable @keyup.enter="getUnitList" />
+        </el-form-item>
+        <el-form-item label="状态">
+          <el-select v-model="unitQueryParams.status" placeholder="选择状态" clearable>
+            <el-option v-for="dict in eq_unit_status" :key="dict.value" :label="dict.label" :value="dict.value" />
+          </el-select>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="getUnitList">搜索</el-button>
+          <el-button @click="resetUnitQuery">重置</el-button>
+          <el-button
+            type="warning"
+            :disabled="unitSelection.length === 0"
+            @click="handleBatchUnitEdit"
+          >批量修改</el-button>
+        </el-form-item>
+      </el-form>
+
+      <el-table v-loading="unitLoading" :data="unitList" max-height="400" @selection-change="handleUnitSelectionChange">
+        <el-table-column type="selection" width="55" />
+        <el-table-column label="单元ID" prop="unitId" width="80" />
+        <el-table-column label="设备ID" prop="equipmentId" width="80" />
+        <el-table-column label="设备编号" prop="unitCode" width="140" />
+        <el-table-column label="状态" align="center" width="80">
+          <template #default="scope">
+            <el-tag v-if="scope.row.status === '0'" type="success">在库</el-tag>
+            <el-tag v-else-if="scope.row.status === '1'" type="warning">借出</el-tag>
+            <el-tag v-else-if="scope.row.status === '2'" type="danger">维修</el-tag>
+            <el-tag v-else-if="scope.row.status === '3'" type="info">报废</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="借用人" prop="borrowerName" width="100">
+          <template #default="scope"><span>{{ scope.row.borrowerName || '-' }}</span></template>
+        </el-table-column>
+        <el-table-column label="借出时间" prop="borrowTime" width="160">
+          <template #default="scope"><span>{{ scope.row.borrowTime || '-' }}</span></template>
+        </el-table-column>
+        <el-table-column label="归还状态" width="100">
+          <template #default="scope">
+            <dict-tag :options="eq_return_status" :value="scope.row.returnStatus" />
+          </template>
+        </el-table-column>
+        <el-table-column label="损坏备注" prop="damageRemark" min-width="140" show-overflow-tooltip />
+        <el-table-column label="操作" width="100" fixed="right">
+          <template #default="scope">
+            <el-button link type="primary" icon="Edit" @click="handleUnitEdit(scope.row)">修改</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+
+      <pagination
+        v-show="unitTotal > 0"
+        :total="unitTotal"
+        v-model:page="unitQueryParams.pageNum"
+        v-model:limit="unitQueryParams.pageSize"
+        @pagination="getUnitList"
+      />
+    </el-dialog>
+
+    <!-- 修改设备单元状态对话框 -->
+    <el-dialog title="修改设备单元" v-model="unitEditOpen" width="450px" append-to-body>
+      <el-form ref="unitEditFormRef" :model="unitEditForm" :rules="unitEditRules" label-width="80px">
+        <el-form-item label="设备编号">
+          <el-input :model-value="unitEditForm.unitCode" disabled />
+        </el-form-item>
+        <el-form-item label="状态" prop="status">
+          <el-radio-group v-model="unitEditForm.status">
+            <el-radio label="0">在库</el-radio>
+            <el-radio label="2">维修</el-radio>
+            <el-radio label="3">报废</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="归还状态" prop="returnStatus">
+          <el-radio-group v-model="unitEditForm.returnStatus">
+            <el-radio
+              v-for="dict in eq_return_status"
+              :key="dict.value"
+              :value="dict.value"
+            >{{ dict.label }}</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="损坏备注" prop="damageRemark">
+          <el-input v-model="unitEditForm.damageRemark" type="textarea" placeholder="损坏/维修说明" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button type="primary" @click="submitUnitEdit">确 定</el-button>
+        <el-button @click="unitEditOpen = false">取 消</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 批量修改设备单元对话框 -->
+    <el-dialog title="批量修改设备单元" v-model="batchUnitEditOpen" width="450px" append-to-body>
+      <el-alert type="info" :closable="false" style="margin-bottom: 16px">
+        已选择 <b>{{ unitSelection.length }}</b> 个设备单元，将应用相同修改。
+      </el-alert>
+      <el-form ref="batchUnitEditFormRef" :model="batchUnitEditForm" :rules="batchUnitEditRules" label-width="80px">
+        <el-form-item label="状态" prop="status">
+          <el-radio-group v-model="batchUnitEditForm.status">
+            <el-radio label="">不变更</el-radio>
+            <el-radio label="0">在库</el-radio>
+            <el-radio label="2">维修</el-radio>
+            <el-radio label="3">报废</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="归还状态" prop="returnStatus">
+          <el-radio-group v-model="batchUnitEditForm.returnStatus">
+            <el-radio label="">不变更</el-radio>
+            <el-radio
+              v-for="dict in eq_return_status"
+              :key="dict.value"
+              :value="dict.value"
+            >{{ dict.label }}</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="损坏备注" prop="damageRemark">
+          <el-input v-model="batchUnitEditForm.damageRemark" type="textarea" placeholder="留空表示不修改" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button type="primary" @click="submitBatchUnitEdit">确 定</el-button>
+        <el-button @click="batchUnitEditOpen = false">取 消</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup name="Equipment">
 import { listEquipment, getEquipment, delEquipment, addEquipment, updateEquipment, getCategoryTree } from "@/api/system/equipment"
+import { listEquipmentUnit, updateEquipmentUnit, batchUpdateEquipmentUnit } from "@/api/system/equipmentUnit"
 
 const { proxy } = getCurrentInstance()
 const { eq_equipment_status } = useDict('eq_equipment_status')
+const { eq_unit_status } = useDict('eq_unit_status')
+const { eq_return_status } = useDict('eq_return_status')
 
 const equipmentList = ref([])
 const categoryTreeOptions = ref([])
@@ -233,6 +386,38 @@ const single = ref(true)
 const multiple = ref(true)
 const total = ref(0)
 const title = ref("")
+
+const unitOpen = ref(false)
+const unitEditOpen = ref(false)
+const unitLoading = ref(false)
+const unitList = ref([])
+const unitTotal = ref(0)
+const unitQueryParams = reactive({
+  pageNum: 1,
+  pageSize: 10,
+  categoryId: undefined,
+  unitCode: undefined,
+  status: undefined
+})
+const unitEditForm = reactive({
+  unitId: null,
+  unitCode: '',
+  status: '0',
+  returnStatus: '0',
+  damageRemark: ''
+})
+const unitEditRules = {
+  status: [{ required: true, message: '状态不能为空', trigger: 'change' }]
+}
+
+const unitSelection = ref([])
+const batchUnitEditOpen = ref(false)
+const batchUnitEditForm = reactive({
+  status: '',
+  returnStatus: '',
+  damageRemark: ''
+})
+const batchUnitEditRules = {}
 
 const data = reactive({
   form: {},
@@ -394,6 +579,88 @@ function handleExport() {
   proxy.download('system/equipment/export', {
     ...queryParams.value
   }, `equipment_${new Date().getTime()}.xlsx`)
+}
+
+/** 单元管理 */
+function handleUnitManage() {
+  unitQueryParams.categoryId = undefined
+  unitQueryParams.unitCode = undefined
+  unitQueryParams.status = undefined
+  unitQueryParams.pageNum = 1
+  unitOpen.value = true
+}
+
+function onUnitDialogOpen() {
+  getTreeselect()
+  getUnitList()
+}
+
+function getUnitList() {
+  unitLoading.value = true
+  listEquipmentUnit(unitQueryParams).then(response => {
+    unitList.value = response.rows
+    unitTotal.value = response.total
+    unitLoading.value = false
+  })
+}
+
+function resetUnitQuery() {
+  unitQueryParams.categoryId = undefined
+  unitQueryParams.unitCode = undefined
+  unitQueryParams.status = undefined
+  unitQueryParams.pageNum = 1
+  getUnitList()
+}
+
+function handleUnitSelectionChange(selection) {
+  unitSelection.value = selection
+}
+
+function handleBatchUnitEdit() {
+  batchUnitEditForm.status = ''
+  batchUnitEditForm.returnStatus = ''
+  batchUnitEditForm.damageRemark = ''
+  batchUnitEditOpen.value = true
+}
+
+function submitBatchUnitEdit() {
+  const unitIds = unitSelection.value.map(item => item.unitId)
+  const payload = { unitIds }
+  if (batchUnitEditForm.status) payload.status = batchUnitEditForm.status
+  if (batchUnitEditForm.returnStatus) payload.returnStatus = batchUnitEditForm.returnStatus
+  if (batchUnitEditForm.damageRemark) payload.damageRemark = batchUnitEditForm.damageRemark
+
+  batchUpdateEquipmentUnit(payload).then(() => {
+    proxy.$modal.msgSuccess('批量修改成功')
+    batchUnitEditOpen.value = false
+    getUnitList()
+  })
+}
+
+function handleUnitEdit(row) {
+  unitEditForm.unitId = row.unitId
+  unitEditForm.unitCode = row.unitCode
+  unitEditForm.status = row.status
+  unitEditForm.returnStatus = row.returnStatus || '0'
+  unitEditForm.damageRemark = row.damageRemark || ''
+  unitEditOpen.value = true
+}
+
+function submitUnitEdit() {
+  proxy.$refs['unitEditFormRef'].validate(valid => {
+    if (valid) {
+      updateEquipmentUnit({
+        unitId: unitEditForm.unitId,
+        status: unitEditForm.status,
+        returnStatus: unitEditForm.returnStatus,
+        damageRemark: unitEditForm.damageRemark || null
+      }).then(() => {
+        proxy.$modal.msgSuccess('修改成功')
+        unitEditOpen.value = false
+        getUnitList()
+      })
+    }
+  })
 }
 
 getTreeselect()

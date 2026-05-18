@@ -96,9 +96,28 @@
         </template>
       </el-table-column>
       <el-table-column label="预约数量" align="center" prop="quantity" />
-      <el-table-column label="分配设备编号" align="center" prop="assignedUnitCodes" width="180">
+      <el-table-column label="分配设备编号" align="center" width="160">
         <template #default="scope">
-          <span>{{ scope.row.assignedUnitCodes || '-' }}</span>
+          <template v-if="scope.row.assignedUnitCodes">
+            <el-popover placement="bottom" :width="320" trigger="hover">
+              <template #reference>
+                <el-tag type="primary" style="cursor: pointer">
+                  {{ scope.row.assignedUnitCodes.split(',')[0] }}
+                  <template v-if="scope.row.assignedUnitCodes.split(',').length > 1">
+                    ... 共{{ scope.row.assignedUnitCodes.split(',').length }}个
+                  </template>
+                </el-tag>
+              </template>
+              <div style="max-height: 260px; overflow-y: auto; line-height: 2">
+                <el-tag
+                  v-for="(code, idx) in scope.row.assignedUnitCodes.split(',')"
+                  :key="idx"
+                  style="margin: 2px 4px"
+                >{{ code.trim() }}</el-tag>
+              </div>
+            </el-popover>
+          </template>
+          <span v-else>-</span>
         </template>
       </el-table-column>
       <el-table-column label="预计归还时间" align="center" prop="expectReturnTime" width="180" />
@@ -219,7 +238,7 @@
     </el-dialog>
 
     <!-- 归还对话框 -->
-    <el-dialog title="归还设备" v-model="returnOpen" width="450px" append-to-body>
+    <el-dialog title="归还设备" v-model="returnOpen" width="500px" append-to-body>
       <el-form ref="returnFormRef" :model="returnForm" :rules="returnRules" label-width="80px">
         <el-form-item label="归还状态" prop="returnStatus">
           <el-radio-group v-model="returnForm.returnStatus">
@@ -230,10 +249,18 @@
             >{{ dict.label }}</el-radio>
           </el-radio-group>
         </el-form-item>
-        <el-form-item label="损坏备注" prop="damageRemark" v-if="returnForm.returnStatus === '2'">
-          <el-input v-model="returnForm.damageRemark" type="textarea" placeholder="请描述设备损坏情况" />
-        </el-form-item>
       </el-form>
+      <el-alert
+        v-if="returnForm.returnStatus === '2'"
+        type="warning"
+        :closable="false"
+        show-icon
+        style="margin-bottom: 12px"
+      >
+        <template #title>
+          归还后请前往 <b>设备信息管理 → 单元管理</b>，对具体损坏设备单独标记为「维修」并填写损坏备注。
+        </template>
+      </el-alert>
       <template #footer>
         <div class="dialog-footer">
           <el-button type="primary" @click="submitReturn">确 定</el-button>
@@ -286,6 +313,9 @@ const data = reactive({
     ],
     equipmentId: [
       { required: true, message: "设备ID不能为空", trigger: "blur" }
+    ],
+    expectReturnTime: [
+      { required: true, message: "预计归还时间不能为空", trigger: "blur" }
     ]
   },
   rejectForm: {
@@ -297,8 +327,7 @@ const data = reactive({
     ]
   },
   returnForm: {
-    returnStatus: '1',
-    damageRemark: ''
+    returnStatus: '1'
   },
   returnRules: {
     returnStatus: [
@@ -411,7 +440,6 @@ function submitReject() {
 function handleReturn(row) {
   currentReturnId.value = row.orderId
   returnForm.value.returnStatus = '1'
-  returnForm.value.damageRemark = ''
   returnOpen.value = true
 }
 
@@ -419,7 +447,7 @@ function handleReturn(row) {
 function submitReturn() {
   proxy.$refs["returnFormRef"].validate(valid => {
     if (valid) {
-      returnOrder(currentReturnId.value, returnForm.value.returnStatus, returnForm.value.damageRemark).then(() => {
+      returnOrder(currentReturnId.value, returnForm.value.returnStatus).then(() => {
         proxy.$modal.msgSuccess("归还成功")
         returnOpen.value = false
         getList()

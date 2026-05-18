@@ -146,7 +146,6 @@ public class ResOrderController extends BaseController
     public AjaxResult returnOrder(@PathVariable Long orderId, @RequestBody Map<String, String> params)
     {
         String returnStatus = params.get("returnStatus");
-        String damageRemark = params.get("damageRemark");
-        return toAjax(resOrderService.returnOrder(orderId, returnStatus, damageRemark));
+        return toAjax(resOrderService.returnOrder(orderId, returnStatus));
     }
 }

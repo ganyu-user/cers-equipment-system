@@ -233,7 +233,7 @@ public class ResOrderServiceImpl implements IResOrderService
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public int returnOrder(Long orderId, String returnStatus, String damageRemark)
+    public int returnOrder(Long orderId, String returnStatus)
     {
         ResOrder order = resOrderMapper.selectResOrderById(orderId);
         if (order == null)
@@ -265,17 +265,10 @@ public class ResOrderServiceImpl implements IResOrderService
                     if (!units.isEmpty())
                     {
                         EqEquipmentUnit unit = units.get(0);
-                        unit.setStatus("0");
-                        unit.setBorrowerId(null);
-                        unit.setBorrowerName(null);
-                        unit.setBorrowOrderId(null);
-                        unit.setBorrowTime(null);
-                        unit.setExpectedReturnTime(null);
                         unit.setActualReturnTime(now);
-                        unit.setReturnStatus(returnStatus != null ? returnStatus : "1");
-                        unit.setDamageRemark(damageRemark);
+                        unit.setReturnStatus("1");
                         unit.setUpdateTime(now);
-                        eqEquipmentUnitMapper.updateEqEquipmentUnit(unit);
+                        eqEquipmentUnitMapper.clearBorrowInfoByUnitId(unit);
                     }
                 }
             }

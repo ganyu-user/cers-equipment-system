@@ -175,4 +175,14 @@ public class EqCategoryController extends BaseController
     {
         return getChildList(list, category).size() > 0;
     }
+
+    /**
+     * 用户端查询分类列表（无需特殊权限）
+     */
+    @GetMapping("/userList")
+    public AjaxResult userList(EqCategory eqCategory)
+    {
+        List<EqCategory> list = eqCategoryService.selectEqCategoryList(eqCategory);
+        return success(list);
+    }
 }

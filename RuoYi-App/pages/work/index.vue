@@ -1,6 +1,5 @@
 <template>
   <view class="work-container">
-    <!-- 轮播图 -->
     <uni-swiper-dot class="uni-swiper-dot-box" :info="data" :current="current" field="content">
       <swiper class="swiper-box" :current="swiperDotIndex" @change="changeSwiper">
         <swiper-item v-for="(item, index) in data" :key="index">
@@ -11,62 +10,19 @@
       </swiper>
     </uni-swiper-dot>
 
-    <!-- 宫格组件 -->
-    <uni-section title="系统管理" type="line"></uni-section>
+    <uni-section title="设备预约" type="line"></uni-section>
     <view class="grid-body">
-      <uni-grid :column="4" :showBorder="false" @change="changeGrid">
-        <uni-grid-item>
+      <uni-grid :column="2" :showBorder="false" @change="changeGrid">
+        <uni-grid-item :index="0">
           <view class="grid-item-box">
-            <uni-icons type="person-filled" size="30"></uni-icons>
-            <text class="text">用户管理</text>
+            <uni-icons type="search" size="30" color="#409EFF"></uni-icons>
+            <text class="text">查看设备</text>
           </view>
         </uni-grid-item>
-        <uni-grid-item>
+        <uni-grid-item :index="1">
           <view class="grid-item-box">
-            <uni-icons type="staff-filled" size="30"></uni-icons>
-            <text class="text">角色管理</text>
-          </view>
-        </uni-grid-item>
-        <uni-grid-item>
-          <view class="grid-item-box">
-            <uni-icons type="color" size="30"></uni-icons>
-            <text class="text">菜单管理</text>
-          </view>
-        </uni-grid-item>
-        <uni-grid-item>
-          <view class="grid-item-box">
-            <uni-icons type="settings-filled" size="30"></uni-icons>
-            <text class="text">部门管理</text>
-          </view>
-        </uni-grid-item>
-        <uni-grid-item>
-          <view class="grid-item-box">
-            <uni-icons type="heart-filled" size="30"></uni-icons>
-            <text class="text">岗位管理</text>
-          </view>
-        </uni-grid-item>
-        <uni-grid-item>
-          <view class="grid-item-box">
-            <uni-icons type="bars" size="30"></uni-icons>
-            <text class="text">字典管理</text>
-          </view>
-        </uni-grid-item>
-        <uni-grid-item>
-          <view class="grid-item-box">
-            <uni-icons type="gear-filled" size="30"></uni-icons>
-            <text class="text">参数设置</text>
-          </view>
-        </uni-grid-item>
-        <uni-grid-item>
-          <view class="grid-item-box">
-            <uni-icons type="chat-filled" size="30"></uni-icons>
-            <text class="text">通知公告</text>
-          </view>
-        </uni-grid-item>
-        <uni-grid-item>
-          <view class="grid-item-box">
-            <uni-icons type="wallet-filled" size="30"></uni-icons>
-            <text class="text">日志管理</text>
+            <uni-icons type="list" size="30" color="#E6A23C"></uni-icons>
+            <text class="text">我的预约</text>
           </view>
         </uni-grid-item>
       </uni-grid>
@@ -75,9 +31,8 @@
 </template>
 
 <script setup>
-  import { ref, getCurrentInstance } from "vue"
+  import { ref } from "vue"
 
-  const { proxy } = getCurrentInstance()
   const current = ref(0)
   const swiperDotIndex = ref(0)
   const data = ref([{ image: '/static/images/banner/banner01.jpg' }, { image: '/static/images/banner/banner02.jpg' }, { image: '/static/images/banner/banner03.jpg' }])
@@ -91,7 +46,12 @@
   }
 
   function changeGrid(e) {
-    proxy.$modal.showToast('模块建设中~')
+    const index = e.detail.index
+    if (index === 0) {
+      uni.navigateTo({ url: '/pages/equipment/list' })
+    } else if (index === 1) {
+      uni.navigateTo({ url: '/pages/order/list' })
+    }
   }
 </script>
 
@@ -132,7 +92,6 @@
   .uni-margin-wrap {
     width: 690rpx;
     width: 100%;
-    ;
   }
 
   .swiper {

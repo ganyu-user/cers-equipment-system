@@ -285,4 +285,28 @@ public class ResOrderServiceImpl implements IResOrderService
 
         return resOrderMapper.updateResOrder(order);
     }
+
+    @Override
+    public int cancelOrder(Long orderId)
+    {
+        ResOrder order = resOrderMapper.selectResOrderById(orderId);
+        if (order == null)
+        {
+            throw new RuntimeException("订单不存在");
+        }
+        if (!"0".equals(order.getOrderStatus()))
+        {
+            throw new RuntimeException("只有待审批的订单可以取消");
+        }
+
+        Long currentUserId = SecurityUtils.getUserId();
+        if (!currentUserId.equals(order.getUserId()))
+        {
+            throw new RuntimeException("只能取消自己的订单");
+        }
+
+        order.setOrderStatus("3");
+        order.setUpdateTime(DateUtils.getNowDate());
+        return resOrderMapper.updateResOrder(order);
+    }
 }

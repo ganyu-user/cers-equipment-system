@@ -21,7 +21,7 @@ list.forEach(item => {
     invoke(to) {
       if (getToken()) {
         if (to.url === loginPage) {
-          uni.reLaunch({ url: "/" })
+          uni.switchTab({ url: '/pages/work/index' })
         }
         return true
       } else {

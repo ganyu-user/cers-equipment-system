@@ -101,4 +101,26 @@ public class EqEquipmentController extends BaseController
     {
         return toAjax(eqEquipmentService.deleteEqEquipmentByEquipmentIds(equipmentIds));
     }
+
+    /**
+     * 用户端查询设备列表（无需特殊权限）
+     */
+    @GetMapping("/userList")
+    public TableDataInfo userList(EqEquipment eqEquipment)
+    {
+        startPage();
+        eqEquipment.setDelFlag("0");
+        eqEquipment.setStatus("0");
+        List<EqEquipment> list = eqEquipmentService.selectEqEquipmentList(eqEquipment);
+        return getDataTable(list);
+    }
+
+    /**
+     * 用户端获取设备详情（无需特殊权限）
+     */
+    @GetMapping("/userDetail/{equipmentId}")
+    public AjaxResult userDetail(@PathVariable("equipmentId") Long equipmentId)
+    {
+        return success(eqEquipmentService.selectEqEquipmentByEquipmentId(equipmentId));
+    }
 }

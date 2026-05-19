@@ -18,6 +18,7 @@ import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.page.TableDataInfo;
 import com.ruoyi.common.enums.BusinessType;
+import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.equipment.order.domain.ResOrder;
 import com.ruoyi.equipment.order.service.IResOrderService;
@@ -147,5 +148,43 @@ public class ResOrderController extends BaseController
     {
         String returnStatus = params.get("returnStatus");
         return toAjax(resOrderService.returnOrder(orderId, returnStatus));
+    }
+
+    /**
+     * 用户端新增预约（无需特殊权限）
+     */
+    @PostMapping("/userAdd")
+    public AjaxResult userAdd(@RequestBody ResOrder resOrder)
+    {
+        resOrder.setUserId(SecurityUtils.getUserId());
+        return toAjax(resOrderService.insertResOrder(resOrder));
+    }
+
+    /**
+     * 用户取消预约
+     */
+    @PutMapping("/cancel/{orderId}")
+    public AjaxResult cancel(@PathVariable Long orderId)
+    {
+        return toAjax(resOrderService.cancelOrder(orderId));
+    }
+
+    /**
+     * 用户端预约详情（无需特殊权限，只能查自己的）
+     */
+    @GetMapping("/userDetail/{orderId}")
+    public AjaxResult userDetail(@PathVariable("orderId") Long orderId)
+    {
+        ResOrder order = resOrderService.selectResOrderById(orderId);
+        if (order == null)
+        {
+            return error("订单不存在");
+        }
+        Long currentUserId = SecurityUtils.getUserId();
+        if (!currentUserId.equals(order.getUserId()))
+        {
+            return error("只能查看自己的订单");
+        }
+        return success(order);
     }
 }

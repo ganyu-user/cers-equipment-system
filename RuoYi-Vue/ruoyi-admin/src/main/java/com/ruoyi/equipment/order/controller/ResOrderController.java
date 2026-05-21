@@ -139,7 +139,7 @@ public class ResOrderController extends BaseController
     }
 
     /**
-     * 归还设备
+     * 归还设备（直接归还，兼容旧逻辑）
      */
     @PreAuthorize("@ss.hasPermi('system:resOrder:return')")
     @Log(title = "预约订单归还", businessType = BusinessType.UPDATE)
@@ -148,6 +148,38 @@ public class ResOrderController extends BaseController
     {
         String returnStatus = params.get("returnStatus");
         return toAjax(resOrderService.returnOrder(orderId, returnStatus));
+    }
+
+    /**
+     * 用户发起归还申请
+     */
+    @PutMapping("/initiateReturn/{orderId}")
+    public AjaxResult initiateReturn(@PathVariable Long orderId)
+    {
+        return toAjax(resOrderService.initiateReturn(orderId));
+    }
+
+    /**
+     * 管理员核验归还
+     */
+    @PreAuthorize("@ss.hasPermi('system:resOrder:return')")
+    @Log(title = "归还核验", businessType = BusinessType.UPDATE)
+    @PutMapping("/verifyReturn/{orderId}")
+    public AjaxResult verifyReturn(@PathVariable Long orderId, @RequestBody Map<String, Object> params)
+    {
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> verifyDetails = (List<Map<String, Object>>) params.get("verifyDetails");
+        return toAjax(resOrderService.verifyReturn(orderId, verifyDetails));
+    }
+
+    /**
+     * 获取归还核验明细
+     */
+    @PreAuthorize("@ss.hasPermi('system:resOrder:query')")
+    @GetMapping("/returnDetail/{orderId}")
+    public AjaxResult getReturnDetail(@PathVariable Long orderId)
+    {
+        return success(resOrderService.getReturnDetailList(orderId));
     }
 
     /**

@@ -44,6 +44,10 @@ public class EqEquipment extends BaseEntity
     @Excel(name = "剩余可用数量")
     private Long remainStock;
 
+    /** 损坏数量 */
+    @Excel(name = "损坏数量")
+    private Long damagedStock;
+
     /** 维修状态（0正常 1维修中） */
     @Excel(name = "维修状态", readConverterExp = "0=正常,1=维修中")
     private String status;
@@ -138,6 +142,16 @@ public class EqEquipment extends BaseEntity
         return remainStock;
     }
 
+    public void setDamagedStock(Long damagedStock) 
+    {
+        this.damagedStock = damagedStock;
+    }
+
+    public Long getDamagedStock() 
+    {
+        return damagedStock;
+    }
+
     public void setStatus(String status) 
     {
         this.status = status;
@@ -217,6 +231,7 @@ public class EqEquipment extends BaseEntity
             .append("image", getImage())
             .append("totalStock", getTotalStock())
             .append("remainStock", getRemainStock())
+            .append("damagedStock", getDamagedStock())
             .append("status", getStatus())
             .append("location", getLocation())
             .append("description", getDescription())

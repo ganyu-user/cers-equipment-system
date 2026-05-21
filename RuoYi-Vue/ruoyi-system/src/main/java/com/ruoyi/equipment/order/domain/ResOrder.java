@@ -22,16 +22,19 @@ public class ResOrder extends BaseEntity
     @Excel(name = "用户ID")
     private Long userId;
 
-    /** 用户名称 */
+    /** 用户名称（昵称） */
     @Excel(name = "用户名称")
     private String userName;
+
+    /** 登录账号 */
+    private String loginName;
 
     /** 预约时间 */
     @Excel(name = "预约时间")
     private String reserveTime;
 
-    /** 预约状态（0待审核 1已通过 2已拒绝 3已取消） */
-    @Excel(name = "预约状态", readConverterExp = "0=待审核,1=已通过,2=已拒绝,3=已取消")
+    /** 预约状态（0待审批 1使用中 2已拒绝 3已归还 4已逾期 5已取消 6待归还核验） */
+    @Excel(name = "预约状态", readConverterExp = "0=待审批,1=使用中,2=已拒绝,3=已归还,4=已逾期,5=已取消,6=待归还核验")
     private String orderStatus;
 
     /** 设备ID */
@@ -53,9 +56,32 @@ public class ResOrder extends BaseEntity
     @Excel(name = "预计归还时间")
     private String expectReturnTime;
 
+    /** 实际归还时间 */
+    private String actualReturnTime;
+
     /** 分配的设备编号列表 */
     @Excel(name = "分配设备编号")
     private String assignedUnitCodes;
+
+    /** 预约人姓名 */
+    @Excel(name = "预约人姓名")
+    private String realName;
+
+    /** 学号 */
+    @Excel(name = "学号")
+    private String studentNo;
+
+    /** 年级 */
+    @Excel(name = "年级")
+    private String grade;
+
+    /** 专业 */
+    @Excel(name = "专业")
+    private String major;
+
+    /** 手机号 */
+    @Excel(name = "手机号")
+    private String phone;
 
     /** 审批人ID */
     private Long approverId;
@@ -71,9 +97,12 @@ public class ResOrder extends BaseEntity
     /** 拒绝原因 */
     private String rejectReason;
 
-    /** 归还状态（0=未归还 1=正常归还 2=损坏归还） */
-    @Excel(name = "归还状态", readConverterExp = "0=未归还,1=正常归还,2=损坏归还")
+    /** 归还状态（0=未归还 1=待核验 2=正常归还 3=损坏归还 4=无需归还） */
+    @Excel(name = "归还状态", readConverterExp = "0=未归还,1=待核验,2=正常归还,3=损坏归还,4=无需归还")
     private String returnStatus;
+
+    /** 设备追踪类型（非数据库字段，用于前端判断） */
+    private String trackUnit;
 
     public Long getOrderId()
     {
@@ -103,6 +132,16 @@ public class ResOrder extends BaseEntity
     public void setUserName(String userName)
     {
         this.userName = userName;
+    }
+
+    public String getLoginName()
+    {
+        return loginName;
+    }
+
+    public void setLoginName(String loginName)
+    {
+        this.loginName = loginName;
     }
 
     public String getReserveTime()
@@ -175,6 +214,16 @@ public class ResOrder extends BaseEntity
         this.expectReturnTime = expectReturnTime;
     }
 
+    public String getActualReturnTime()
+    {
+        return actualReturnTime;
+    }
+
+    public void setActualReturnTime(String actualReturnTime)
+    {
+        this.actualReturnTime = actualReturnTime;
+    }
+
     public String getAssignedUnitCodes()
     {
         return assignedUnitCodes;
@@ -183,6 +232,56 @@ public class ResOrder extends BaseEntity
     public void setAssignedUnitCodes(String assignedUnitCodes)
     {
         this.assignedUnitCodes = assignedUnitCodes;
+    }
+
+    public String getRealName()
+    {
+        return realName;
+    }
+
+    public void setRealName(String realName)
+    {
+        this.realName = realName;
+    }
+
+    public String getStudentNo()
+    {
+        return studentNo;
+    }
+
+    public void setStudentNo(String studentNo)
+    {
+        this.studentNo = studentNo;
+    }
+
+    public String getGrade()
+    {
+        return grade;
+    }
+
+    public void setGrade(String grade)
+    {
+        this.grade = grade;
+    }
+
+    public String getMajor()
+    {
+        return major;
+    }
+
+    public void setMajor(String major)
+    {
+        this.major = major;
+    }
+
+    public String getPhone()
+    {
+        return phone;
+    }
+
+    public void setPhone(String phone)
+    {
+        this.phone = phone;
     }
 
     public Long getApproverId()
@@ -235,12 +334,23 @@ public class ResOrder extends BaseEntity
         this.returnStatus = returnStatus;
     }
 
+    public String getTrackUnit()
+    {
+        return trackUnit;
+    }
+
+    public void setTrackUnit(String trackUnit)
+    {
+        this.trackUnit = trackUnit;
+    }
+
     @Override
     public String toString() {
         return new ToStringBuilder(this,ToStringStyle.MULTI_LINE_STYLE)
             .append("orderId", getOrderId())
             .append("userId", getUserId())
             .append("userName", getUserName())
+            .append("loginName", getLoginName())
             .append("reserveTime", getReserveTime())
             .append("orderStatus", getOrderStatus())
             .append("equipmentId", getEquipmentId())
@@ -248,12 +358,19 @@ public class ResOrder extends BaseEntity
             .append("equipmentImage", getEquipmentImage())
             .append("quantity", getQuantity())
             .append("expectReturnTime", getExpectReturnTime())
+            .append("actualReturnTime", getActualReturnTime())
             .append("assignedUnitCodes", getAssignedUnitCodes())
+            .append("realName", getRealName())
+            .append("studentNo", getStudentNo())
+            .append("grade", getGrade())
+            .append("major", getMajor())
+            .append("phone", getPhone())
             .append("approverId", getApproverId())
             .append("approverName", getApproverName())
             .append("approveTime", getApproveTime())
             .append("rejectReason", getRejectReason())
             .append("returnStatus", getReturnStatus())
+            .append("trackUnit", getTrackUnit())
             .append("createBy", getCreateBy())
             .append("createTime", getCreateTime())
             .append("updateBy", getUpdateBy())

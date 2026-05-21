@@ -3,7 +3,7 @@
     <view class="equipment-summary" v-if="equipmentDetail.equipmentName">
       <text class="summary-label">预约设备</text>
       <text class="summary-name">{{ equipmentDetail.equipmentName }}</text>
-      <text class="summary-stock">可借库存：{{ equipmentDetail.remainStock }} 台</text>
+      <text class="summary-stock">可借库存：{{ equipmentDetail.remainStock }}</text>
     </view>
 
     <view class="form-section">
@@ -45,8 +45,8 @@
       </view>
 
       <view class="form-item">
-        <text class="form-label">年级</text>
-        <input class="form-input" v-model="form.grade" placeholder="请输入年级" />
+        <text class="form-label">年级和班级</text>
+        <input class="form-input" v-model="form.grade" placeholder="填写详细年级和班级" />
       </view>
 
       <view class="form-item">
@@ -219,7 +219,7 @@
       uni.hideLoading()
       uni.showToast({ title: '预约成功，等待审批', icon: 'success' })
       setTimeout(() => {
-        uni.navigateTo({ url: '/pages/order/list' })
+        uni.reLaunch({ url: '/pages/work/index' })
       }, 1500)
     } catch (e) {
       uni.hideLoading()

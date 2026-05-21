@@ -29,3 +29,10 @@ export function cancelOrder(orderId) {
     method: 'put'
   })
 }
+
+export function initiateReturn(orderId) {
+  return request({
+    url: '/system/resOrder/initiateReturn/' + orderId,
+    method: 'put'
+  })
+}

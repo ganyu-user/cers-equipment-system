@@ -1,6 +1,7 @@
 package com.ruoyi.equipment.order.service;
 
 import java.util.List;
+import java.util.Map;
 import com.ruoyi.equipment.order.domain.ResOrder;
 
 /**
@@ -32,4 +33,10 @@ public interface IResOrderService
     public int returnOrder(Long orderId, String returnStatus);
 
     public int cancelOrder(Long orderId);
+
+    public int initiateReturn(Long orderId);
+
+    public int verifyReturn(Long orderId, List<Map<String, Object>> verifyDetails);
+
+    public List<Map<String, Object>> getReturnDetailList(Long orderId);
 }

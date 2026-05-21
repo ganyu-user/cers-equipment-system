@@ -3,7 +3,7 @@
     <view class="tab-bar">
       <view class="tab-item" :class="{ active: activeTab === '' }" @click="switchTab('')">全部</view>
       <view class="tab-item" :class="{ active: activeTab === '0' }" @click="switchTab('0')">待审批</view>
-      <view class="tab-item" :class="{ active: activeTab === '4' }" @click="switchTab('4')">使用中</view>
+      <view class="tab-item" :class="{ active: activeTab === '1' }" @click="switchTab('1')">使用中</view>
     </view>
 
     <scroll-view class="list-scroll" scroll-y @scrolltolower="loadMore">
@@ -112,12 +112,12 @@
   }
 
   function getStatusText(status) {
-    const map = { '0': '待审批', '4': '使用中', '2': '已拒绝', '5': '已归还', '3': '已取消' }
+    const map = { '0': '待审批', '1': '使用中', '2': '已拒绝', '3': '已归还', '4': '已逾期', '5': '已取消', '6': '待归还核验' }
     return map[status] || '未知'
   }
 
   function getStatusColor(status) {
-    const map = { '0': '#E6A23C', '4': '#67C23A', '2': '#F56C6C', '5': '#909399', '3': '#909399' }
+    const map = { '0': '#E6A23C', '1': '#67C23A', '2': '#F56C6C', '3': '#909399', '4': '#F56C6C', '5': '#909399', '6': '#E6A23C' }
     return map[status] || '#909399'
   }
 </script>

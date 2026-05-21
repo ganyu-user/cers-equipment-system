@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.equipment.order.mapper.ReturnDetailMapper">
+
+    <resultMap type="ReturnDetail" id="ReturnDetailResult">
+        <result property="detailId"       column="detail_id"       />
+        <result property="orderId"        column="order_id"        />
+        <result property="equipmentId"    column="equipment_id"    />
+        <result property="unitId"         column="unit_id"         />
+        <result property="unitCode"       column="unit_code"       />
+        <result property="returnStatus"   column="return_status"   />
+        <result property="damageRemark"   column="damage_remark"   />
+        <result property="returnQuantity" column="return_quantity" />
+        <result property="damageQuantity" column="damage_quantity" />
+        <result property="createTime"     column="create_time"     />
+    </resultMap>
+
+    <select id="selectReturnDetailByOrderId" parameterType="Long" resultMap="ReturnDetailResult">
+        select detail_id, order_id, equipment_id, unit_id, unit_code,
+               return_status, damage_remark, return_quantity, damage_quantity, create_time
+        from res_return_detail
+        where order_id = #{orderId}
+        order by create_time asc
+    </select>
+
+    <insert id="insertReturnDetail" parameterType="ReturnDetail" useGeneratedKeys="true" keyProperty="detailId">
+        insert into res_return_detail
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="orderId != null">order_id,</if>
+            <if test="equipmentId != null">equipment_id,</if>
+            <if test="unitId != null">unit_id,</if>
+            <if test="unitCode != null">unit_code,</if>
+            <if test="returnStatus != null">return_status,</if>
+            <if test="damageRemark != null">damage_remark,</if>
+            <if test="returnQuantity != null">return_quantity,</if>
+            <if test="damageQuantity != null">damage_quantity,</if>
+            <if test="createTime != null">create_time,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="orderId != null">#{orderId},</if>
+            <if test="equipmentId != null">#{equipmentId},</if>
+            <if test="unitId != null">#{unitId},</if>
+            <if test="unitCode != null">#{unitCode},</if>
+            <if test="returnStatus != null">#{returnStatus},</if>
+            <if test="damageRemark != null">#{damageRemark},</if>
+            <if test="returnQuantity != null">#{returnQuantity},</if>
+            <if test="damageQuantity != null">#{damageQuantity},</if>
+            <if test="createTime != null">#{createTime},</if>
+        </trim>
+    </insert>
+
+    <insert id="batchInsertReturnDetail" parameterType="list" useGeneratedKeys="true" keyProperty="detailId">
+        insert into res_return_detail (order_id, equipment_id, unit_id, unit_code, return_status, damage_remark, return_quantity, damage_quantity, create_time)
+        values
+        <foreach collection="list" item="item" separator=",">
+            (#{item.orderId}, #{item.equipmentId}, #{item.unitId}, #{item.unitCode}, #{item.returnStatus}, #{item.damageRemark}, #{item.returnQuantity}, #{item.damageQuantity}, #{item.createTime})
+        </foreach>
+    </insert>
+
+    <delete id="deleteReturnDetailByOrderId" parameterType="Long">
+        delete from res_return_detail where order_id = #{orderId}
+    </delete>
+
+</mapper>

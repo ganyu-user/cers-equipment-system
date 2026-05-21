@@ -17,7 +17,7 @@
         </view>
         <view class="info-row">
           <text class="info-label">预约数量</text>
-          <text class="info-value">{{ detail.quantity }} 台</text>
+          <text class="info-value">{{ detail.quantity }}</text>
         </view>
         <view v-if="detail.assignedUnitCodes" class="info-row">
           <text class="info-label">分配编号</text>
@@ -44,7 +44,7 @@
           <text class="info-value">{{ detail.studentNo }}</text>
         </view>
         <view v-if="detail.grade" class="info-row">
-          <text class="info-label">年级</text>
+          <text class="info-label">年级和班级</text>
           <text class="info-value">{{ detail.grade }}</text>
         </view>
         <view v-if="detail.major" class="info-row">
@@ -81,6 +81,9 @@
       <view v-if="detail.orderStatus === '0'" class="bottom-bar">
         <view class="cancel-btn" @click="handleCancel">取消预约</view>
       </view>
+      <view v-if="detail.orderStatus === '1'" class="bottom-bar">
+        <view class="return-btn" @click="handleInitiateReturn">发起归还</view>
+      </view>
     </view>
 
     <view v-else-if="!loading" class="empty-tip">
@@ -93,7 +96,7 @@
 <script setup>
   import { ref } from 'vue'
   import { onLoad } from '@dcloudio/uni-app'
-  import { getOrderDetail, cancelOrder } from '@/api/order'
+  import { getOrderDetail, cancelOrder, initiateReturn } from '@/api/order'
   import config from '@/config'
 
   const orderId = ref('')
@@ -136,13 +139,26 @@
     }
   }
 
+  async function handleInitiateReturn() {
+    const res = await uni.showModal({ title: '提示', content: '确认发起归还申请？发起后需等待管理员现场核验。' })
+    if (res.confirm) {
+      try {
+        await initiateReturn(orderId.value)
+        uni.showToast({ title: '归还申请已提交', icon: 'success' })
+        loadDetail()
+      } catch (e) {
+        // ignore
+      }
+    }
+  }
+
   function getStatusText(status) {
-    const map = { '0': '待审批', '4': '使用中', '2': '已拒绝', '5': '已归还', '3': '已取消' }
+    const map = { '0': '待审批', '1': '使用中', '2': '已拒绝', '3': '已归还', '4': '已逾期', '5': '已取消', '6': '待归还核验' }
     return map[status] || '未知'
   }
 
   function getStatusBgColor(status) {
-    const map = { '0': '#E6A23C', '4': '#67C23A', '2': '#F56C6C', '5': '#909399', '3': '#909399' }
+    const map = { '0': '#E6A23C', '1': '#67C23A', '2': '#F56C6C', '3': '#909399', '4': '#F56C6C', '5': '#909399', '6': '#E6A23C' }
     return map[status] || '#909399'
   }
 </script>
@@ -241,6 +257,19 @@
     border-radius: 8px;
     border: 1px solid #F56C6C;
     color: #F56C6C;
+    font-size: 16px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .return-btn {
+    width: 100%;
+    height: 44px;
+    border-radius: 8px;
+    background-color: #409EFF;
+    color: #fff;
     font-size: 16px;
     font-weight: 600;
     display: flex;

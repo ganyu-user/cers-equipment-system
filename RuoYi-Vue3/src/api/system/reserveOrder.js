@@ -1,6 +1,5 @@
 import request from '@/utils/request'
 
-// 查询预约订单列表
 export function listResOrder(query) {
   return request({
     url: '/system/resOrder/list',
@@ -9,7 +8,6 @@ export function listResOrder(query) {
   })
 }
 
-// 查询我的预约订单
 export function myResOrderList(query) {
   return request({
     url: '/system/resOrder/myList',
@@ -18,7 +16,6 @@ export function myResOrderList(query) {
   })
 }
 
-// 查询预约订单详细
 export function getResOrder(orderId) {
   return request({
     url: '/system/resOrder/' + orderId,
@@ -26,7 +23,6 @@ export function getResOrder(orderId) {
   })
 }
 
-// 新增预约订单
 export function addResOrder(data) {
   return request({
     url: '/system/resOrder',
@@ -35,7 +31,6 @@ export function addResOrder(data) {
   })
 }
 
-// 修改预约订单
 export function updateResOrder(data) {
   return request({
     url: '/system/resOrder',
@@ -44,7 +39,6 @@ export function updateResOrder(data) {
   })
 }
 
-// 删除预约订单
 export function delResOrder(orderId) {
   return request({
     url: '/system/resOrder/' + orderId,
@@ -52,7 +46,6 @@ export function delResOrder(orderId) {
   })
 }
 
-// 审批通过
 export function approveOrder(orderId) {
   return request({
     url: '/system/resOrder/approve/' + orderId,
@@ -60,7 +53,6 @@ export function approveOrder(orderId) {
   })
 }
 
-// 审批拒绝
 export function rejectOrder(orderId, rejectReason) {
   return request({
     url: '/system/resOrder/reject/' + orderId,
@@ -69,11 +61,32 @@ export function rejectOrder(orderId, rejectReason) {
   })
 }
 
-// 归还设备
 export function returnOrder(orderId, returnStatus) {
   return request({
     url: '/system/resOrder/return/' + orderId,
     method: 'put',
     data: { returnStatus }
+  })
+}
+
+export function initiateReturn(orderId) {
+  return request({
+    url: '/system/resOrder/initiateReturn/' + orderId,
+    method: 'put'
+  })
+}
+
+export function verifyReturn(orderId, verifyDetails) {
+  return request({
+    url: '/system/resOrder/verifyReturn/' + orderId,
+    method: 'put',
+    data: { verifyDetails }
+  })
+}
+
+export function getReturnDetail(orderId) {
+  return request({
+    url: '/system/resOrder/returnDetail/' + orderId,
+    method: 'get'
   })
 }

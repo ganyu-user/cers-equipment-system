@@ -18,6 +18,10 @@ public class ResOrder extends BaseEntity
     /** 订单ID */
     private Long orderId;
 
+    /** 订单编号 */
+    @Excel(name = "订单编号")
+    private String orderNo;
+
     /** 用户ID */
     @Excel(name = "用户ID")
     private Long userId;
@@ -112,6 +116,16 @@ public class ResOrder extends BaseEntity
     public void setOrderId(Long orderId)
     {
         this.orderId = orderId;
+    }
+
+    public String getOrderNo()
+    {
+        return orderNo;
+    }
+
+    public void setOrderNo(String orderNo)
+    {
+        this.orderNo = orderNo;
     }
 
     public Long getUserId()
@@ -348,6 +362,7 @@ public class ResOrder extends BaseEntity
     public String toString() {
         return new ToStringBuilder(this,ToStringStyle.MULTI_LINE_STYLE)
             .append("orderId", getOrderId())
+            .append("orderNo", getOrderNo())
             .append("userId", getUserId())
             .append("userName", getUserName())
             .append("loginName", getLoginName())

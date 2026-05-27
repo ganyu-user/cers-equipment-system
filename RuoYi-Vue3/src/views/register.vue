@@ -37,6 +37,31 @@
           <template #prefix><svg-icon icon-class="password" class="el-input__icon input-icon" /></template>
         </el-input>
       </el-form-item>
+      <el-form-item prop="realName">
+        <el-input v-model="registerForm.realName" type="text" size="large" placeholder="真实姓名">
+          <template #prefix><svg-icon icon-class="user" class="el-input__icon input-icon" /></template>
+        </el-input>
+      </el-form-item>
+      <el-form-item prop="studentNo">
+        <el-input v-model="registerForm.studentNo" type="text" size="large" placeholder="学号">
+          <template #prefix><svg-icon icon-class="education" class="el-input__icon input-icon" /></template>
+        </el-input>
+      </el-form-item>
+      <el-form-item prop="grade">
+        <el-input v-model="registerForm.grade" type="text" size="large" placeholder="年级和班级">
+          <template #prefix><svg-icon icon-class="education" class="el-input__icon input-icon" /></template>
+        </el-input>
+      </el-form-item>
+      <el-form-item prop="major">
+        <el-input v-model="registerForm.major" type="text" size="large" placeholder="专业">
+          <template #prefix><svg-icon icon-class="edit" class="el-input__icon input-icon" /></template>
+        </el-input>
+      </el-form-item>
+      <el-form-item prop="phone">
+        <el-input v-model="registerForm.phone" type="text" size="large" placeholder="手机号">
+          <template #prefix><svg-icon icon-class="phone" class="el-input__icon input-icon" /></template>
+        </el-input>
+      </el-form-item>
       <el-form-item prop="code" v-if="captchaEnabled">
         <el-input
           size="large" 
@@ -91,6 +116,11 @@ const registerForm = ref({
   username: "",
   password: "",
   confirmPassword: "",
+  realName: "",
+  studentNo: "",
+  grade: "",
+  major: "",
+  phone: "",
   code: "",
   uuid: ""
 })

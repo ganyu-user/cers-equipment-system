@@ -51,7 +51,7 @@
   // 验证码开关
   const captchaEnabled = ref(true)
   // 用户注册开关
-  const register = ref(false)
+  const register = ref(true)
   const loginForm = ref({
     username: "admin",
     password: "admin123",

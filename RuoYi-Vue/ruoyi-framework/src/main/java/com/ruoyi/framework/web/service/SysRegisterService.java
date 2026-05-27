@@ -1,7 +1,9 @@
 package com.ruoyi.framework.web.service;
 
+import java.util.Collections;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import com.ruoyi.common.constant.CacheConstants;
 import com.ruoyi.common.constant.Constants;
 import com.ruoyi.common.constant.UserConstants;
@@ -16,14 +18,13 @@ import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.framework.manager.AsyncManager;
 import com.ruoyi.framework.manager.factory.AsyncFactory;
+import com.ruoyi.system.domain.SysUserProfile;
+import com.ruoyi.system.domain.SysUserRole;
 import com.ruoyi.system.service.ISysConfigService;
+import com.ruoyi.system.service.ISysUserProfileService;
 import com.ruoyi.system.service.ISysUserService;
+import com.ruoyi.system.mapper.SysUserRoleMapper;
 
-/**
- * 注册校验方法
- * 
- * @author ruoyi
- */
 @Component
 public class SysRegisterService
 {
@@ -36,16 +37,19 @@ public class SysRegisterService
     @Autowired
     private RedisCache redisCache;
 
-    /**
-     * 注册
-     */
+    @Autowired
+    private ISysUserProfileService userProfileService;
+
+    @Autowired(required = false)
+    private SysUserRoleMapper userRoleMapper;
+
+    @Transactional(rollbackFor = Exception.class)
     public String register(RegisterBody registerBody)
     {
         String msg = "", username = registerBody.getUsername(), password = registerBody.getPassword();
         SysUser sysUser = new SysUser();
         sysUser.setUserName(username);
 
-        // 验证码开关
         boolean captchaEnabled = configService.selectCaptchaEnabled();
         if (captchaEnabled)
         {
@@ -76,7 +80,8 @@ public class SysRegisterService
         }
         else
         {
-            sysUser.setNickName(username);
+            String nickName = StringUtils.isNotEmpty(registerBody.getRealName()) ? registerBody.getRealName() : username;
+            sysUser.setNickName(nickName);
             sysUser.setPwdUpdateDate(DateUtils.getNowDate());
             sysUser.setPassword(SecurityUtils.encryptPassword(password));
             boolean regFlag = userService.registerUser(sysUser);
@@ -86,20 +91,30 @@ public class SysRegisterService
             }
             else
             {
+                if (userRoleMapper != null)
+                {
+                    SysUserRole ur = new SysUserRole();
+                    ur.setUserId(sysUser.getUserId());
+                    ur.setRoleId(100L);
+                    userRoleMapper.batchUserRole(Collections.singletonList(ur));
+                }
+
+                SysUserProfile profile = new SysUserProfile();
+                profile.setUserId(sysUser.getUserId());
+                profile.setRealName(registerBody.getRealName());
+                profile.setStudentNo(registerBody.getStudentNo());
+                profile.setGrade(registerBody.getGrade());
+                profile.setMajor(registerBody.getMajor());
+                profile.setPhone(registerBody.getPhone());
+                profile.setCreateBy(username);
+                userProfileService.insertSysUserProfile(profile);
+
                 AsyncManager.me().execute(AsyncFactory.recordLogininfor(username, Constants.REGISTER, MessageUtils.message("user.register.success")));
             }
         }
         return msg;
     }
 
-    /**
-     * 校验验证码
-     * 
-     * @param username 用户名
-     * @param code 验证码
-     * @param uuid 唯一标识
-     * @return 结果
-     */
     public void validateCaptcha(String username, String code, String uuid)
     {
         String verifyKey = CacheConstants.CAPTCHA_CODE_KEY + StringUtils.nvl(uuid, "");

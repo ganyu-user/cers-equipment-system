@@ -4,6 +4,7 @@
 
     <resultMap type="ResOrder" id="ResOrderResult">
         <result property="orderId"          column="order_id"          />
+        <result property="orderNo"          column="order_no"          />
         <result property="userId"           column="user_id"           />
         <result property="userName"         column="user_name"         />
         <result property="loginName"        column="login_name"        />
@@ -36,7 +37,7 @@
     </resultMap>
 
     <sql id="selectResOrderVo">
-        select r.order_id, r.user_id, u.nick_name as user_name, u.user_name as login_name, r.real_name, r.student_no, r.grade, r.major, r.phone, r.reserve_time, r.order_status,
+        select r.order_id, r.order_no, r.user_id, u.nick_name as user_name, u.user_name as login_name, r.real_name, r.student_no, r.grade, r.major, r.phone, r.reserve_time, r.order_status,
                r.equip_id, e.equipment_name, e.image as equipment_image, e.track_unit,
                r.quantity, r.expect_return_time, r.actual_return_time,
                r.assigned_unit_codes, r.approver_id, r.approver_name,
@@ -78,6 +79,7 @@
     <insert id="insertResOrder" parameterType="ResOrder" useGeneratedKeys="true" keyProperty="orderId">
         insert into res_order
         <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="orderNo != null and orderNo != ''">order_no,</if>
             <if test="userId != null">user_id,</if>
             <if test="reserveTime != null and reserveTime != ''">reserve_time,</if>
             <if test="orderStatus != null and orderStatus != ''">order_status,</if>
@@ -99,6 +101,7 @@
             <if test="updateTime != null">update_time,</if>
         </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="orderNo != null and orderNo != ''">#{orderNo},</if>
             <if test="userId != null">#{userId},</if>
             <if test="reserveTime != null and reserveTime != ''">#{reserveTime},</if>
             <if test="orderStatus != null and orderStatus != ''">#{orderStatus},</if>
@@ -124,6 +127,7 @@
     <update id="updateResOrder" parameterType="ResOrder">
         update res_order
         <trim prefix="SET" suffixOverrides=",">
+            <if test="orderNo != null and orderNo != ''">order_no = #{orderNo},</if>
             <if test="userId != null">user_id = #{userId},</if>
             <if test="reserveTime != null and reserveTime != ''">reserve_time = #{reserveTime},</if>
             <if test="orderStatus != null and orderStatus != ''">order_status = #{orderStatus},</if>

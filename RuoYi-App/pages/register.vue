@@ -18,6 +18,26 @@
         <view class="iconfont icon-password icon"></view>
         <input v-model="registerForm.confirmPassword" type="password" class="input" placeholder="请输入重复密码" maxlength="20" />
       </view>
+      <view class="input-item flex align-center">
+        <view class="iconfont icon-user icon"></view>
+        <input v-model="registerForm.realName" class="input" type="text" placeholder="请输入真实姓名" maxlength="30" />
+      </view>
+      <view class="input-item flex align-center">
+        <view class="iconfont icon-user icon"></view>
+        <input v-model="registerForm.studentNo" class="input" type="text" placeholder="请输入学号" maxlength="30" />
+      </view>
+      <view class="input-item flex align-center">
+        <view class="iconfont icon-user icon"></view>
+        <input v-model="registerForm.grade" class="input" type="text" placeholder="请输入年级和班级" maxlength="30" />
+      </view>
+      <view class="input-item flex align-center">
+        <view class="iconfont icon-user icon"></view>
+        <input v-model="registerForm.major" class="input" type="text" placeholder="请输入专业" maxlength="50" />
+      </view>
+      <view class="input-item flex align-center">
+        <view class="iconfont icon-user icon"></view>
+        <input v-model="registerForm.phone" class="input" type="text" placeholder="请输入手机号" maxlength="20" />
+      </view>
       <view class="input-item flex align-center" style="width: 60%;margin: 0px;" v-if="captchaEnabled">
         <view class="iconfont icon-code icon"></view>
         <input v-model="registerForm.code" type="number" class="input" placeholder="请输入验证码" maxlength="4" />
@@ -49,6 +69,11 @@
     username: "",
     password: "",
     confirmPassword: "",
+    realName: "",
+    studentNo: "",
+    grade: "",
+    major: "",
+    phone: "",
     code: "",
     uuid: ""
   })

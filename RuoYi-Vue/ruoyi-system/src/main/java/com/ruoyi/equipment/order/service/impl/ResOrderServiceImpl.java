@@ -1,6 +1,7 @@
 package com.ruoyi.equipment.order.service.impl;
 
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -64,6 +65,8 @@ public class ResOrderServiceImpl implements IResOrderService
     {
         resOrder.setCreateTime(DateUtils.getNowDate());
 
+        resOrder.setOrderNo(generateOrderNo());
+
         Long currentUserId = SecurityUtils.getUserId();
         String currentUserName = SecurityUtils.getUsername();
         resOrder.setUserId(currentUserId);
@@ -102,6 +105,13 @@ public class ResOrderServiceImpl implements IResOrderService
         resOrder.setCreateBy(currentUserName);
 
         return resOrderMapper.insertResOrder(resOrder);
+    }
+
+    private String generateOrderNo()
+    {
+        String timestamp = DateUtils.parseDateToStr("yyyyMMddHHmmssSSS", new Date());
+        int random = ThreadLocalRandom.current().nextInt(100, 999);
+        return "RES" + timestamp + random;
     }
 
     @Override

@@ -38,7 +38,9 @@
 
     <el-table v-loading="loading" :data="resOrderList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="订单号" align="center" prop="orderId" width="80" />
+      <el-table-column label="订单号" align="center" prop="orderNo" width="180">
+        <template #default="scope"><span>{{ scope.row.orderNo || scope.row.orderId }}</span></template>
+      </el-table-column>
       <el-table-column label="预约人" align="center" prop="realName" width="100">
         <template #default="scope"><span>{{ scope.row.realName || '-' }}</span></template>
       </el-table-column>
@@ -93,7 +95,7 @@
     <!-- 详情对话框 -->
     <el-dialog title="预约单详情" v-model="detailOpen" width="700px" append-to-body>
       <el-descriptions :column="2" border>
-        <el-descriptions-item label="订单号">{{ detailForm.orderId }}</el-descriptions-item>
+        <el-descriptions-item label="订单编号">{{ detailForm.orderNo || detailForm.orderId }}</el-descriptions-item>
         <el-descriptions-item label="预约状态">
           <dict-tag :options="res_order_status" :value="detailForm.orderStatus"/>
         </el-descriptions-item>
@@ -149,7 +151,7 @@
     <el-dialog title="归还核验" v-model="verifyOpen" width="750px" append-to-body :close-on-click-modal="false">
       <div v-if="verifyOrderData">
         <el-descriptions :column="2" border size="small" style="margin-bottom: 16px">
-          <el-descriptions-item label="订单ID">{{ verifyOrderData.orderId }}</el-descriptions-item>
+          <el-descriptions-item label="订单编号">{{ verifyOrderData.orderNo || verifyOrderData.orderId }}</el-descriptions-item>
           <el-descriptions-item label="预约人">{{ verifyOrderData.realName || verifyOrderData.userName }}</el-descriptions-item>
           <el-descriptions-item label="设备名称">{{ verifyOrderData.equipmentName }}</el-descriptions-item>
           <el-descriptions-item label="预约数量">{{ verifyOrderData.quantity }}</el-descriptions-item>

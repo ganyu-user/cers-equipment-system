@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.SysMsgMapper">
+
+    <resultMap type="SysMsg" id="SysMsgResult">
+        <result property="msgId"       column="msg_id"       />
+        <result property="msgType"     column="msg_type"     />
+        <result property="title"       column="title"        />
+        <result property="content"     column="content"      />
+        <result property="orderId"     column="order_id"     />
+        <result property="senderId"    column="sender_id"    />
+        <result property="senderName"  column="sender_name"  />
+        <result property="priority"    column="priority"     />
+        <result property="targetType"  column="target_type"  />
+        <result property="targetId"    column="target_id"    />
+        <result property="targetRole"  column="target_role"  />
+        <result property="createBy"    column="create_by"    />
+        <result property="createTime"  column="create_time"  />
+        <result property="updateBy"    column="update_by"    />
+        <result property="updateTime"  column="update_time"  />
+        <result property="remark"      column="remark"       />
+        <result property="delFlag"     column="del_flag"     />
+        <result property="isRead"      column="is_read"      />
+        <result property="targetUserName" column="target_user_name" />
+    </resultMap>
+
+    <select id="selectSysMsgList" parameterType="SysMsg" resultMap="SysMsgResult">
+        select m.msg_id, m.msg_type, m.title, m.content, m.order_id, m.sender_id, m.sender_name,
+               m.priority, m.target_type, m.target_id, m.target_role,
+               m.create_by, m.create_time, m.update_by, m.update_time, m.remark, m.del_flag,
+               case when m.target_type = 'user' then p.real_name
+                    when m.target_type = 'role' then m.target_role
+                    when m.target_type = 'all' then '全部用户'
+                    else '' end as target_user_name
+        from sys_msg m
+        left join sys_user_profile p on m.target_type = 'user' and p.user_id = m.target_id
+        where m.del_flag = '0'
+        <if test="msgType != null and msgType != ''">and msg_type = #{msgType}</if>
+        <if test="title != null and title != ''">and title like concat('%', #{title}, '%')</if>
+        order by create_time desc
+    </select>
+
+    <select id="selectSysMsgById" parameterType="Long" resultMap="SysMsgResult">
+        select m.msg_id, m.msg_type, m.title, m.content, m.order_id, m.sender_id, m.sender_name,
+               m.priority, m.target_type, m.target_id, m.target_role,
+               m.create_by, m.create_time, m.update_by, m.update_time, m.remark, m.del_flag,
+               case when m.target_type = 'user' then p.real_name
+                    when m.target_type = 'role' then m.target_role
+                    when m.target_type = 'all' then '全部用户'
+                    else '' end as target_user_name
+        from sys_msg m
+        left join sys_user_profile p on m.target_type = 'user' and p.user_id = m.target_id
+        where m.msg_id = #{msgId}
+    </select>
+
+    <select id="selectSysMsgListByUserId" parameterType="SysMsg" resultMap="SysMsgResult">
+        select m.msg_id, m.msg_type, m.title, m.content, m.order_id, m.sender_id, m.sender_name,
+               m.priority, m.target_type, m.target_id, m.target_role,
+               m.create_by, m.create_time, m.update_by, m.update_time, m.remark, m.del_flag,
+               case when r.read_id is not null then '1' else '0' end as is_read
+        from sys_msg m
+        left join sys_msg_read r on r.msg_id = m.msg_id and r.user_id = #{userId}
+        where m.del_flag = '0'
+          and (m.target_type = 'all'
+               or (m.target_type = 'user' and find_in_set(#{userId}, m.target_id) > 0)
+               or (m.target_type = 'role' and exists (
+                   select 1 from sys_user_role ur
+                   join sys_role r2 on r2.role_id = ur.role_id
+                   where ur.user_id = #{userId} and r2.role_key = m.target_role collate utf8mb4_general_ci
+               )))
+        <if test="msgType != null and msgType != ''">and m.msg_type = #{msgType}</if>
+        <if test="isRead != null and isRead == &quot;0&quot;">and r.read_id is null</if>
+        order by m.create_time desc
+    </select>
+
+    <insert id="insertSysMsg" parameterType="SysMsg" useGeneratedKeys="true" keyProperty="msgId">
+        insert into sys_msg
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="msgType != null">msg_type,</if>
+            <if test="title != null">title,</if>
+            <if test="content != null">content,</if>
+            <if test="orderId != null">order_id,</if>
+            <if test="senderId != null">sender_id,</if>
+            <if test="senderName != null">sender_name,</if>
+            <if test="priority != null">priority,</if>
+            <if test="targetType != null">target_type,</if>
+            <if test="targetId != null">target_id,</if>
+            <if test="targetRole != null">target_role,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="msgType != null">#{msgType},</if>
+            <if test="title != null">#{title},</if>
+            <if test="content != null">#{content},</if>
+            <if test="orderId != null">#{orderId},</if>
+            <if test="senderId != null">#{senderId},</if>
+            <if test="senderName != null">#{senderName},</if>
+            <if test="priority != null">#{priority},</if>
+            <if test="targetType != null">#{targetType},</if>
+            <if test="targetId != null">#{targetId},</if>
+            <if test="targetRole != null">#{targetRole},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+
+    <update id="updateSysMsg" parameterType="SysMsg">
+        update sys_msg
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="title != null">title = #{title},</if>
+            <if test="content != null">content = #{content},</if>
+            <if test="priority != null">priority = #{priority},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where msg_id = #{msgId}
+    </update>
+
+    <delete id="deleteSysMsgById" parameterType="Long">
+        update sys_msg set del_flag = '1' where msg_id = #{msgId}
+    </delete>
+
+    <delete id="deleteSysMsgByIds" parameterType="Long">
+        update sys_msg set del_flag = '1' where msg_id in
+        <foreach collection="array" item="msgId" open="(" separator="," close=")">
+            #{msgId}
+        </foreach>
+    </delete>
+
+</mapper>

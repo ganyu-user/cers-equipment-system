@@ -64,6 +64,7 @@
           <el-button link type="success" icon="CircleCheck" @click="handleApprove(scope.row)" v-if="scope.row.orderStatus === '0'" v-hasPermi="['system:resOrder:approve']">通过</el-button>
           <el-button link type="danger" icon="CircleClose" @click="handleReject(scope.row)" v-if="scope.row.orderStatus === '0'" v-hasPermi="['system:resOrder:approve']">拒绝</el-button>
           <el-button link type="warning" icon="RefreshRight" @click="handleVerifyReturn(scope.row)" v-if="scope.row.orderStatus === '6'" v-hasPermi="['system:resOrder:return']">核验归还</el-button>
+          <el-button link type="danger" icon="AlarmClock" @click="handleUrgeReturn(scope.row)" v-if="canUrge(scope.row)" v-hasPermi="['system:resOrder:edit']">催还</el-button>
           <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['system:resOrder:remove']">删除</el-button>
         </template>
       </el-table-column>
@@ -237,7 +238,7 @@
 </template>
 
 <script setup name="ResOrder">
-import { listResOrder, getResOrder, delResOrder, addResOrder, updateResOrder, approveOrder, rejectOrder, verifyReturn, getReturnDetail } from "@/api/system/reserveOrder"
+import { listResOrder, getResOrder, delResOrder, addResOrder, updateResOrder, approveOrder, rejectOrder, verifyReturn, getReturnDetail, urgeReturn } from "@/api/system/reserveOrder"
 import { listEquipmentUnit } from "@/api/system/equipmentUnit"
 
 const { proxy } = getCurrentInstance()
@@ -517,6 +518,22 @@ function handleDelete(row) {
 
 function handleExport() {
   proxy.download('system/resOrder/export', { ...queryParams.value }, `resOrder_${new Date().getTime()}.xlsx`)
+}
+
+function handleUrgeReturn(row) {
+  proxy.$modal.confirm('确认向该用户发送催还通知？').then(function() {
+    return urgeReturn(row.orderId)
+  }).then(() => { proxy.$modal.msgSuccess("催还消息已发送") }).catch(() => {})
+}
+
+function canUrge(row) {
+  if (row.orderStatus === '4') return true
+  if (row.orderStatus === '1' && row.expectReturnTime) {
+    const now = new Date()
+    const expectReturn = new Date(row.expectReturnTime)
+    return now > expectReturn
+  }
+  return false
 }
 
 getList()

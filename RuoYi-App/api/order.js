@@ -8,6 +8,13 @@ export function addOrder(data) {
   })
 }
 
+export function getMyProfile() {
+  return request({
+    url: '/system/resOrder/myProfile',
+    method: 'get'
+  })
+}
+
 export function myOrderList(query) {
   return request({
     url: '/system/resOrder/myList',

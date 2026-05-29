@@ -22,6 +22,9 @@ import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.equipment.order.domain.ResOrder;
 import com.ruoyi.equipment.order.service.IResOrderService;
+import com.ruoyi.equipment.order.task.OrderMsgTask;
+import com.ruoyi.system.domain.SysUserProfile;
+import com.ruoyi.system.service.ISysUserProfileService;
 
 /**
  * 预约订单Controller
@@ -35,6 +38,12 @@ public class ResOrderController extends BaseController
 {
     @Autowired
     private IResOrderService resOrderService;
+
+    @Autowired
+    private ISysUserProfileService sysUserProfileService;
+
+    @Autowired
+    private OrderMsgTask orderMsgTask;
 
     /**
      * 查询预约订单列表
@@ -218,5 +227,28 @@ public class ResOrderController extends BaseController
             return error("只能查看自己的订单");
         }
         return success(order);
+    }
+
+    /**
+     * 获取当前登录用户的个人资料
+     */
+    @GetMapping("/myProfile")
+    public AjaxResult myProfile()
+    {
+        Long userId = SecurityUtils.getUserId();
+        SysUserProfile profile = sysUserProfileService.selectSysUserProfileByUserId(userId);
+        return success(profile != null ? profile : new SysUserProfile());
+    }
+
+    /**
+     * 管理员催还
+     */
+    @PreAuthorize("@ss.hasPermi('system:resOrder:edit')")
+    @Log(title = "催还提醒", businessType = BusinessType.UPDATE)
+    @PutMapping("/urgeReturn/{orderId}")
+    public AjaxResult urgeReturn(@PathVariable Long orderId)
+    {
+        int result = orderMsgTask.urgeReturn(orderId);
+        return result > 0 ? success("催还消息已发送") : error("催还失败，请检查订单状态");
     }
 }

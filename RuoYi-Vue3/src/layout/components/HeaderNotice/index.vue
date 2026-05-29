@@ -47,6 +47,7 @@ const unreadCount = ref(0)
 const noticeLoading = ref(false)
 const noticeVisible = ref(false)
 const noticeLeaveTimer = ref(null)
+const intervalTimer = ref(null)
 const { proxy } = getCurrentInstance()
 
 // 加载顶部公告列表
@@ -60,7 +61,17 @@ function loadNoticeTop() {
   })
 }
 
-onMounted(() => loadNoticeTop())
+onMounted(() => {
+  loadNoticeTop()
+  intervalTimer.value = setInterval(loadNoticeTop, 30000)
+})
+
+onUnmounted(() => {
+  if (intervalTimer.value) {
+    clearInterval(intervalTimer.value)
+    intervalTimer.value = null
+  }
+})
 
 // 鼠标移入铃铛区域
 function onNoticeEnter() {

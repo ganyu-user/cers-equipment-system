@@ -75,10 +75,8 @@
   import { ref, reactive } from 'vue'
   import { onLoad } from '@dcloudio/uni-app'
   import { getEquipment } from '@/api/equipment'
-  import { addOrder } from '@/api/order'
-  import { useUserStore } from '@/store/modules/user'
+  import { addOrder, getMyProfile } from '@/api/order'
 
-  const userStore = useUserStore()
   const equipmentId = ref('')
   const equipmentDetail = ref({})
 
@@ -157,9 +155,23 @@
   onLoad((options) => {
     equipmentId.value = options.equipmentId
     form.equipmentId = options.equipmentId
-    form.realName = userStore.name || ''
     loadEquipmentDetail()
+    loadMyProfile()
   })
+
+  async function loadMyProfile() {
+    try {
+      const res = await getMyProfile()
+      const profile = res.data || {}
+      if (profile.realName) form.realName = profile.realName
+      if (profile.studentNo) form.studentNo = profile.studentNo
+      if (profile.grade) form.grade = profile.grade
+      if (profile.major) form.major = profile.major
+      if (profile.phone) form.phone = profile.phone
+    } catch (e) {
+      // ignore
+    }
+  }
 
   async function loadEquipmentDetail() {
     try {

@@ -90,3 +90,10 @@ export function getReturnDetail(orderId) {
     method: 'get'
   })
 }
+
+export function urgeReturn(orderId) {
+  return request({
+    url: '/system/resOrder/urgeReturn/' + orderId,
+    method: 'put'
+  })
+}

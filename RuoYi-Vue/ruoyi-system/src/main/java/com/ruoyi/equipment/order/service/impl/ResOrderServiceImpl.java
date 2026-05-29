@@ -17,6 +17,9 @@ import com.ruoyi.equipment.unit.domain.EqEquipmentUnit;
 import com.ruoyi.equipment.unit.mapper.EqEquipmentUnitMapper;
 import com.ruoyi.equipment.info.domain.EqEquipment;
 import com.ruoyi.equipment.info.mapper.EqEquipmentMapper;
+import com.ruoyi.system.service.ISysMsgService;
+import com.ruoyi.system.service.ISysNoticeService;
+import com.ruoyi.system.domain.SysNotice;
 
 /**
  * 预约订单Service业务层处理
@@ -38,6 +41,12 @@ public class ResOrderServiceImpl implements IResOrderService
 
     @Autowired
     private ReturnDetailMapper returnDetailMapper;
+
+    @Autowired
+    private ISysMsgService sysMsgService;
+
+    @Autowired
+    private ISysNoticeService sysNoticeService;
 
     @Override
     public ResOrder selectResOrderById(Long orderId)
@@ -87,6 +96,11 @@ public class ResOrderServiceImpl implements IResOrderService
             throw new RuntimeException("设备不存在");
         }
 
+        if (resOrder.getEquipmentName() == null || resOrder.getEquipmentName().isEmpty())
+        {
+            resOrder.setEquipmentName(equipment.getEquipmentName());
+        }
+
         if ("1".equals(equipment.getTrackUnit()))
         {
             List<EqEquipmentUnit> availableUnits = eqEquipmentUnitMapper.selectAvailableUnitsByEquipmentId(resOrder.getEquipmentId());
@@ -104,7 +118,25 @@ public class ResOrderServiceImpl implements IResOrderService
 
         resOrder.setCreateBy(currentUserName);
 
-        return resOrderMapper.insertResOrder(resOrder);
+        int result = resOrderMapper.insertResOrder(resOrder);
+
+        try
+        {
+            String content = "您已成功提交预约申请，设备：{0}，数量：{1}，请等待管理员审批。";
+            content = java.text.MessageFormat.format(content, resOrder.getEquipmentName(), resOrder.getQuantity());
+            sysMsgService.sendMsgToUser(resOrder.getUserId(), "reserve", "预约提交成功", content, resOrder.getOrderId());
+
+            String adminContent = "用户 <b>{0}</b> 提交了预约申请。<br>订单号：{1}<br>设备：{2}<br>数量：{3}<br>请前往【预约单管理】进行审批。";
+            adminContent = java.text.MessageFormat.format(adminContent, resOrder.getRealName(), resOrder.getOrderNo(), resOrder.getEquipmentName(), resOrder.getQuantity());
+            createAdminNotice("待审批 - {0} 预约了 {1}".replace("{0}", resOrder.getRealName()).replace("{1}", resOrder.getEquipmentName()), adminContent);
+            sysMsgService.sendMsgToRole("admin", "reserve", "待审批预约", adminContent, resOrder.getOrderId());
+        }
+        catch (Exception e)
+        {
+            // 通知发送失败不影响主流程
+        }
+
+        return result;
     }
 
     private String generateOrderNo()
@@ -112,6 +144,24 @@ public class ResOrderServiceImpl implements IResOrderService
         String timestamp = DateUtils.parseDateToStr("yyyyMMddHHmmssSSS", new Date());
         int random = ThreadLocalRandom.current().nextInt(100, 999);
         return "RES" + timestamp + random;
+    }
+
+    private void createAdminNotice(String title, String content)
+    {
+        try
+        {
+            SysNotice notice = new SysNotice();
+            notice.setNoticeTitle(title);
+            notice.setNoticeType("1");
+            notice.setNoticeContent(content);
+            notice.setStatus("0");
+            notice.setCreateBy("system");
+            sysNoticeService.insertNotice(notice);
+        }
+        catch (Exception e)
+        {
+            // 公告创建失败不影响主流程
+        }
     }
 
     @Override
@@ -212,7 +262,21 @@ public class ResOrderServiceImpl implements IResOrderService
         order.setApproveTime(approveTime);
         order.setUpdateTime(now);
 
-        return resOrderMapper.updateResOrder(order);
+        int result = resOrderMapper.updateResOrder(order);
+
+        try
+        {
+            String location = equipment.getLocation() != null ? equipment.getLocation() : "指定地点";
+            String content = "恭喜！您的预约已通过审批。设备：{0}，请于{1}前往{2}使用。";
+            content = java.text.MessageFormat.format(content, order.getEquipmentName(), order.getReserveTime(), location);
+            sysMsgService.sendMsgToUser(order.getUserId(), "reserve", "预约已通过", content, orderId);
+        }
+        catch (Exception e)
+        {
+            // 通知发送失败不影响主流程
+        }
+
+        return result;
     }
 
     @Override
@@ -242,7 +306,20 @@ public class ResOrderServiceImpl implements IResOrderService
         order.setRejectReason(rejectReason);
         order.setUpdateTime(now);
 
-        return resOrderMapper.updateResOrder(order);
+        int result = resOrderMapper.updateResOrder(order);
+
+        try
+        {
+            String content = "很遗憾，您的预约申请被拒绝。设备：{0}，原因：{1}。";
+            content = java.text.MessageFormat.format(content, order.getEquipmentName(), rejectReason);
+            sysMsgService.sendMsgToUser(order.getUserId(), "reserve", "预约已拒绝", content, orderId);
+        }
+        catch (Exception e)
+        {
+            // 通知发送失败不影响主流程
+        }
+
+        return result;
     }
 
     @Override
@@ -384,6 +461,18 @@ public class ResOrderServiceImpl implements IResOrderService
                     }
                 }
             }
+        }
+
+        try
+        {
+            String adminContent = "用户 <b>{0}</b>（{1}）已发起设备归还申请。<br>订单号：{2}<br>设备：{3}<br>请前往【预约单管理】进行核验归还。";
+            adminContent = java.text.MessageFormat.format(adminContent, order.getRealName(), order.getPhone(), order.getOrderNo(), order.getEquipmentName());
+            createAdminNotice("待核验 - " + order.getRealName() + " 归还 " + order.getEquipmentName(), adminContent);
+            sysMsgService.sendMsgToRole("admin", "return", "待核验归还", adminContent, orderId);
+        }
+        catch (Exception e)
+        {
+            // 通知发送失败不影响主流程
         }
 
         return 1;
@@ -580,7 +669,24 @@ public class ResOrderServiceImpl implements IResOrderService
             order.setUpdateTime(now);
         }
 
-        return resOrderMapper.updateResOrder(order);
+        int result = resOrderMapper.updateResOrder(order);
+
+        if (allReturned)
+        {
+            try
+            {
+                String returnStatusText = totalDamageReturned > 0 ? "损坏归还" : "正常归还";
+                String content = "您的设备归还已核验完成。设备：{0}，归还状态：{1}。感谢您的使用！";
+                content = java.text.MessageFormat.format(content, order.getEquipmentName(), returnStatusText);
+                sysMsgService.sendMsgToUser(order.getUserId(), "return", "归还核验完成", content, orderId);
+            }
+            catch (Exception e)
+            {
+                // 通知发送失败不影响主流程
+            }
+        }
+
+        return result;
     }
 
     @Override

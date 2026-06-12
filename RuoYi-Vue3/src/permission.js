@@ -9,6 +9,7 @@ import useUserStore from '@/store/modules/user'
 import useLockStore from '@/store/modules/lock'
 import useSettingsStore from '@/store/modules/settings'
 import usePermissionStore from '@/store/modules/permission'
+import { connectWebSocket, disconnectWebSocket } from '@/utils/websocket'
 
 NProgress.configure({ showSpinner: false })
 
@@ -59,6 +60,8 @@ router.beforeEach(async (to, from) => {
         return { path: '/' }
       }
     }
+    // 建立 WebSocket 连接（首次加载 & 页面刷新均命中此逻辑）
+    connectWebSocket()
     return true
   } else {
     // 没有token

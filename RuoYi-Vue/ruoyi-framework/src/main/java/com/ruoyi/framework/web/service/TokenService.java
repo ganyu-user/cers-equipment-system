@@ -66,10 +66,29 @@ public class TokenService
         String token = getToken(request);
         if (StringUtils.isNotEmpty(token))
         {
+            return getLoginUserByToken(token);
+        }
+        return null;
+    }
+
+    /**
+     * 通过 token 字符串获取用户信息（用于 WebSocket 等无 HttpServletRequest 场景）
+     * 
+     * @param token JWT token（不含前缀）
+     * @return 用户信息
+     */
+    public LoginUser getLoginUserByToken(String token)
+    {
+        if (StringUtils.isNotEmpty(token))
+        {
             try
             {
+                // 去掉 Bearer 前缀（如果有）
+                if (token.startsWith(Constants.TOKEN_PREFIX))
+                {
+                    token = token.replace(Constants.TOKEN_PREFIX, "");
+                }
                 Claims claims = parseToken(token);
-                // 解析对应的权限以及用户信息
                 String uuid = (String) claims.get(Constants.LOGIN_USER_KEY);
                 String userKey = getTokenKey(uuid);
                 LoginUser user = redisCache.getCacheObject(userKey);

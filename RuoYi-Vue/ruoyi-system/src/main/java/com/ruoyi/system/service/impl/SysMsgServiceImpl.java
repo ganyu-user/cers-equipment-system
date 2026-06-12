@@ -6,7 +6,9 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.alibaba.fastjson2.JSON;
 import com.ruoyi.common.utils.DateUtils;
+import com.ruoyi.common.websocket.WebSocketServer;
 import com.ruoyi.system.domain.SysMsg;
 import com.ruoyi.system.domain.SysMsgRead;
 import com.ruoyi.system.mapper.SysMsgMapper;
@@ -71,6 +73,13 @@ public class SysMsgServiceImpl implements ISysMsgService
     @Transactional(rollbackFor = Exception.class)
     public void sendMsgToUser(Long userId, String msgType, String title, String content, Long orderId)
     {
+        sendMsgToUser(userId, msgType, title, content, orderId, "normal");
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void sendMsgToUser(Long userId, String msgType, String title, String content, Long orderId, String priority)
+    {
         SysMsg msg = new SysMsg();
         msg.setMsgType(msgType);
         msg.setTitle(title);
@@ -78,12 +87,15 @@ public class SysMsgServiceImpl implements ISysMsgService
         msg.setOrderId(orderId);
         msg.setSenderId(null);
         msg.setSenderName("系统");
-        msg.setPriority("normal");
+        msg.setPriority(priority);
         msg.setTargetType("user");
         msg.setTargetId(String.valueOf(userId));
         msg.setCreateBy("system");
         msg.setCreateTime(DateUtils.getNowDate());
         sysMsgMapper.insertSysMsg(msg);
+
+        // WebSocket 实时推送
+        pushToUser(userId, msg);
     }
 
     @Override
@@ -101,11 +113,21 @@ public class SysMsgServiceImpl implements ISysMsgService
         msg.setCreateBy("system");
         msg.setCreateTime(DateUtils.getNowDate());
         sysMsgMapper.insertSysMsg(msg);
+
+        // WebSocket 广播
+        WebSocketServer.broadcast(buildPushMessage(msg));
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void sendMsgToRole(String roleKey, String msgType, String title, String content, Long orderId)
+    {
+        sendMsgToRole(roleKey, msgType, title, content, orderId, "normal");
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void sendMsgToRole(String roleKey, String msgType, String title, String content, Long orderId, String priority)
     {
         SysMsg msg = new SysMsg();
         msg.setMsgType(msgType);
@@ -114,7 +136,7 @@ public class SysMsgServiceImpl implements ISysMsgService
         msg.setOrderId(orderId);
         msg.setSenderId(null);
         msg.setSenderName("系统");
-        msg.setPriority("normal");
+        msg.setPriority(priority);
         msg.setTargetType("role");
         msg.setTargetRole(roleKey);
         msg.setCreateBy("system");
@@ -163,5 +185,53 @@ public class SysMsgServiceImpl implements ISysMsgService
         {
             markAsRead(userId, msgIds);
         }
+    }
+
+    /**
+     * WebSocket 推送给指定用户
+     */
+    private void pushToUser(Long userId, SysMsg msg)
+    {
+        WebSocketServer.sendToUser(userId, buildPushMessage(msg));
+    }
+
+    /**
+     * 构建 WebSocket 推送消息 JSON
+     */
+    private String buildPushMessage(SysMsg msg)
+    {
+        return JSON.toJSONString(new PushMessage(msg));
+    }
+
+    /**
+     * 推送消息体
+     */
+    private static class PushMessage
+    {
+        private String type = "msg";
+        private Long msgId;
+        private String msgType;
+        private String title;
+        private String content;
+        private String priority;
+        private String createTime;
+
+        PushMessage(SysMsg msg)
+        {
+            this.msgId = msg.getMsgId();
+            this.msgType = msg.getMsgType();
+            this.title = msg.getTitle();
+            this.content = msg.getContent();
+            this.priority = msg.getPriority();
+            this.createTime = DateUtils.parseDateToStr("yyyy-MM-dd HH:mm:ss", msg.getCreateTime());
+        }
+
+        public String getType() { return type; }
+        public Long getMsgId() { return msgId; }
+        public String getMsgType() { return msgType; }
+        public String getTitle() { return title; }
+        public String getContent() { return content; }
+        public String getPriority() { return priority; }
+        public String getCreateTime() { return createTime; }
     }
 }

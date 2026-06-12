@@ -113,6 +113,12 @@
             <artifactId>jakarta.servlet-api</artifactId>
         </dependency>
 
+        <!-- WebSocket API（供 WebSocketServer 使用） -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-websocket</artifactId>
+        </dependency>
+
     </dependencies>
 
 </project>

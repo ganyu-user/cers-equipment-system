@@ -6,6 +6,7 @@ import constant from '@/utils/constant'
 import { isHttp, isEmpty } from "@/utils/validate"
 import { getInfo, login, logout } from '@/api/login'
 import { getToken, removeToken, setToken } from '@/utils/auth'
+import { disconnectWebSocket } from '@/utils/websocket'
 import defAva from '@/static/images/profile.jpg'
 
 const baseUrl = config.baseUrl
@@ -94,6 +95,7 @@ export const useUserStore = defineStore('user', () => {
         SET_ROLES([])
         SET_PERMISSIONS([])
         removeToken()
+        disconnectWebSocket()
         storage.clean()
         resolve()
       }).catch(error => {

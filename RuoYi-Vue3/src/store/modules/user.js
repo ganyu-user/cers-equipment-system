@@ -3,7 +3,8 @@ import cache from '@/plugins/cache'
 import { ElMessageBox, } from 'element-plus'
 import { login, logout, getInfo } from '@/api/login'
 import { getToken, setToken, removeToken } from '@/utils/auth'
-import { isHttp, isEmpty } from "@/utils/validate"
+import { disconnectWebSocket } from '@/utils/websocket'
+import { isEmpty, isHttp } from "@/utils/validate"
 import useLockStore from '@/store/modules/lock'
 import defAva from '@/assets/images/profile.jpg'
 
@@ -83,6 +84,7 @@ const useUserStore = defineStore(
             this.roles = []
             this.permissions = []
             removeToken()
+            disconnectWebSocket()
             resolve()
           }).catch(error => {
             reject(error)

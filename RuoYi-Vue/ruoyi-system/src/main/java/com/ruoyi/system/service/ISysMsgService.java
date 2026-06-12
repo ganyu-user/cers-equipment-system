@@ -21,9 +21,13 @@ public interface ISysMsgService
 
     void sendMsgToUser(Long userId, String msgType, String title, String content, Long orderId);
 
+    void sendMsgToUser(Long userId, String msgType, String title, String content, Long orderId, String priority);
+
     void sendMsgToAll(String msgType, String title, String content);
 
     void sendMsgToRole(String roleKey, String msgType, String title, String content, Long orderId);
+
+    void sendMsgToRole(String roleKey, String msgType, String title, String content, Long orderId, String priority);
 
     void markAsRead(Long userId, List<Long> msgIds);
 

@@ -1,25 +1,41 @@
 package com.ruoyi.equipment.order.service.impl;
 
-import java.util.*;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
+
+import com.ruoyi.common.constant.CacheConstants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.ruoyi.common.core.redis.RedisCache;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.SecurityUtils;
-import com.ruoyi.equipment.order.mapper.ResOrderMapper;
-import com.ruoyi.equipment.order.mapper.ReturnDetailMapper;
-import com.ruoyi.equipment.order.domain.ResOrder;
-import com.ruoyi.equipment.order.domain.ReturnDetail;
-import com.ruoyi.equipment.order.service.IResOrderService;
-import com.ruoyi.equipment.unit.domain.EqEquipmentUnit;
-import com.ruoyi.equipment.unit.mapper.EqEquipmentUnitMapper;
 import com.ruoyi.equipment.info.domain.EqEquipment;
 import com.ruoyi.equipment.info.mapper.EqEquipmentMapper;
+import com.ruoyi.equipment.order.domain.ResOrder;
+import com.ruoyi.equipment.order.domain.ReturnDetail;
+import com.ruoyi.equipment.order.mapper.ResOrderMapper;
+import com.ruoyi.equipment.order.mapper.ReturnDetailMapper;
+import com.ruoyi.equipment.order.service.IBookingSlotService;
+import com.ruoyi.equipment.order.service.IResOrderService;
+import com.ruoyi.equipment.order.util.SlotSegment;
+import com.ruoyi.equipment.unit.domain.EqEquipmentUnit;
+import com.ruoyi.equipment.unit.mapper.EqEquipmentUnitMapper;
+import com.ruoyi.system.domain.SysNotice;
 import com.ruoyi.system.service.ISysMsgService;
 import com.ruoyi.system.service.ISysNoticeService;
-import com.ruoyi.system.domain.SysNotice;
 
 /**
  * 预约订单Service业务层处理
@@ -48,10 +64,30 @@ public class ResOrderServiceImpl implements IResOrderService
     @Autowired
     private ISysNoticeService sysNoticeService;
 
+    @Autowired
+    private IBookingSlotService bookingSlotService;
+
+    @Autowired
+    private RedisCache redisCache;
+
+    private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HH:mm:ss");
+    private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
     @Override
     public ResOrder selectResOrderById(Long orderId)
     {
-        return resOrderMapper.selectResOrderById(orderId);
+        String cacheKey = CacheConstants.RES_ORDER_KEY + orderId;
+        ResOrder cached = redisCache.getCacheObject(cacheKey);
+        if (cached != null)
+        {
+            return cached;
+        }
+        ResOrder order = resOrderMapper.selectResOrderById(orderId);
+        if (order != null)
+        {
+            redisCache.setCacheObject(cacheKey, order, 30, java.util.concurrent.TimeUnit.MINUTES);
+        }
+        return order;
     }
 
     @Override
@@ -101,6 +137,10 @@ public class ResOrderServiceImpl implements IResOrderService
             resOrder.setEquipmentName(equipment.getEquipmentName());
         }
 
+        // ---- 时间槽预占 ----
+        String slotInfo = preOccupyTimeSlots(resOrder, equipment);
+        resOrder.setSlotInfo(slotInfo);
+
         if ("1".equals(equipment.getTrackUnit()))
         {
             List<EqEquipmentUnit> availableUnits = eqEquipmentUnitMapper.selectAvailableUnitsByEquipmentId(resOrder.getEquipmentId());
@@ -117,7 +157,6 @@ public class ResOrderServiceImpl implements IResOrderService
         }
 
         resOrder.setCreateBy(currentUserName);
-
         int result = resOrderMapper.insertResOrder(resOrder);
 
         try
@@ -129,7 +168,9 @@ public class ResOrderServiceImpl implements IResOrderService
             String adminContent = "用户 <b>{0}</b> 提交了预约申请。<br>订单号：{1}<br>设备：{2}<br>数量：{3}<br>请前往【预约单管理】进行审批。";
             adminContent = java.text.MessageFormat.format(adminContent, resOrder.getRealName(), resOrder.getOrderNo(), resOrder.getEquipmentName(), resOrder.getQuantity());
             createAdminNotice("待审批 - {0} 预约了 {1}".replace("{0}", resOrder.getRealName()).replace("{1}", resOrder.getEquipmentName()), adminContent);
-            sysMsgService.sendMsgToRole("admin", "reserve", "待审批预约", adminContent, resOrder.getOrderId());
+            // app 消息使用纯文本版本，避免 HTML 标签乱码
+            String plainAdminContent = "用户 " + resOrder.getRealName() + " 提交了预约申请。订单号：" + resOrder.getOrderNo() + "，设备：" + resOrder.getEquipmentName() + "，数量：" + resOrder.getQuantity() + "。请前往【预约单管理】进行审批。";
+            sysMsgService.sendMsgToRole("admin", "reserve", "待审批预约", plainAdminContent, resOrder.getOrderId());
         }
         catch (Exception e)
         {
@@ -168,7 +209,12 @@ public class ResOrderServiceImpl implements IResOrderService
     public int updateResOrder(ResOrder resOrder)
     {
         resOrder.setUpdateTime(DateUtils.getNowDate());
-        return resOrderMapper.updateResOrder(resOrder);
+        int rows = resOrderMapper.updateResOrder(resOrder);
+        if (rows > 0)
+        {
+            deleteOrderCache(resOrder.getOrderId());
+        }
+        return rows;
     }
 
     @Override
@@ -264,6 +310,8 @@ public class ResOrderServiceImpl implements IResOrderService
 
         int result = resOrderMapper.updateResOrder(order);
 
+        deleteOrderCache(orderId);
+
         try
         {
             String location = equipment.getLocation() != null ? equipment.getLocation() : "指定地点";
@@ -307,6 +355,11 @@ public class ResOrderServiceImpl implements IResOrderService
         order.setUpdateTime(now);
 
         int result = resOrderMapper.updateResOrder(order);
+
+        // 释放已预占的时间槽
+        releaseOrderSlots(order);
+
+        deleteOrderCache(orderId);
 
         try
         {
@@ -383,7 +436,9 @@ public class ResOrderServiceImpl implements IResOrderService
         order.setActualReturnTime(DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS, now));
         order.setUpdateTime(now);
 
-        return resOrderMapper.updateResOrder(order);
+        int result = resOrderMapper.updateResOrder(order);
+        deleteOrderCache(orderId);
+        return result;
     }
 
     @Override
@@ -408,7 +463,13 @@ public class ResOrderServiceImpl implements IResOrderService
         order.setOrderStatus("5");
         order.setReturnStatus("4");
         order.setUpdateTime(DateUtils.getNowDate());
-        return resOrderMapper.updateResOrder(order);
+        int result = resOrderMapper.updateResOrder(order);
+
+        // 释放已预占的时间槽
+        releaseOrderSlots(order);
+
+        deleteOrderCache(orderId);
+        return result;
     }
 
     @Override
@@ -437,6 +498,7 @@ public class ResOrderServiceImpl implements IResOrderService
         order.setReturnStatus("1");
         order.setUpdateTime(now);
         resOrderMapper.updateResOrder(order);
+        deleteOrderCache(orderId);
 
         EqEquipment equipment = eqEquipmentMapper.selectEqEquipmentByEquipmentId(order.getEquipmentId());
         if ("1".equals(equipment.getTrackUnit()))
@@ -468,7 +530,8 @@ public class ResOrderServiceImpl implements IResOrderService
             String adminContent = "用户 <b>{0}</b>（{1}）已发起设备归还申请。<br>订单号：{2}<br>设备：{3}<br>请前往【预约单管理】进行核验归还。";
             adminContent = java.text.MessageFormat.format(adminContent, order.getRealName(), order.getPhone(), order.getOrderNo(), order.getEquipmentName());
             createAdminNotice("待核验 - " + order.getRealName() + " 归还 " + order.getEquipmentName(), adminContent);
-            sysMsgService.sendMsgToRole("admin", "return", "待核验归还", adminContent, orderId);
+            String plainAdminContent = "用户 " + order.getRealName() + "（" + (order.getPhone() != null ? order.getPhone() : "") + "）已发起设备归还申请。订单号：" + order.getOrderNo() + "，设备：" + order.getEquipmentName() + "。请前往【预约单管理】进行核验归还。";
+            sysMsgService.sendMsgToRole("admin", "return", "待核验归还", plainAdminContent, orderId);
         }
         catch (Exception e)
         {
@@ -671,6 +734,8 @@ public class ResOrderServiceImpl implements IResOrderService
 
         int result = resOrderMapper.updateResOrder(order);
 
+        deleteOrderCache(orderId);
+
         if (allReturned)
         {
             try
@@ -711,4 +776,141 @@ public class ResOrderServiceImpl implements IResOrderService
         }
         return result;
     }
+
+    // ==================== 时间槽预占/释放 ====================
+
+    /**
+     * 根据订单的时间范围预占时间槽
+     * <p>
+     * 从 reserveTime 提取日期和起始时间，从 expectReturnTime 提取结束时间，
+     * 计算覆盖的时间槽索引列表，通过 Redis Lua 原子脚本进行容量检查与预占。
+     *
+     * @param order     预约订单
+     * @param equipment 设备信息（用于获取单槽最大容量）
+     * @return 槽位字符串（如 "2026-06-12:4,5,6,7"），失败时抛异常
+     */
+    private String preOccupyTimeSlots(ResOrder order, EqEquipment equipment) {
+        try {
+            // 1. 解析日期和时间
+            LocalDate date;
+            LocalTime startTime, endTime;
+
+            String reserveTime = order.getReserveTime();
+            if (reserveTime != null && reserveTime.contains(" ")) {
+                // 格式: "yyyy-MM-dd HH:mm:ss"
+                String[] parts = reserveTime.split(" ");
+                date = LocalDate.parse(parts[0], DATE_FMT);
+                startTime = LocalTime.parse(parts[1].substring(0, 8), TIME_FMT);
+            } else if (reserveTime != null) {
+                date = LocalDate.parse(reserveTime, DATE_FMT);
+                startTime = SlotSegment.DAY_START;
+            } else {
+                throw new RuntimeException("预约时间不能为空");
+            }
+
+            String expectReturn = order.getExpectReturnTime();
+            if (expectReturn != null && expectReturn.contains(" ")) {
+                String[] parts = expectReturn.split(" ");
+                endTime = LocalTime.parse(parts[1].substring(0, 8), TIME_FMT);
+            } else {
+                endTime = SlotSegment.DAY_END;
+            }
+
+            // 2. 计算覆盖的槽位
+            List<Integer> coveredSlots = SlotSegment.getCoveredSlots(startTime, endTime);
+            if (coveredSlots.isEmpty()) {
+                throw new RuntimeException("预约时间不在可预约时段内（" +
+                    SlotSegment.DAY_START + "-" + SlotSegment.DAY_END + "）");
+            }
+
+            // 3. 确定单槽最大容量（优先取设备总库存）
+            int maxCapacity = equipment.getRemainStock() != null
+                ? equipment.getRemainStock().intValue()
+                : equipment.getTotalStock() != null ? equipment.getTotalStock().intValue() : 999;
+            int quantity = order.getQuantity() != null ? order.getQuantity() : 1;
+
+            // 4. 执行时间槽预占（分布式锁 + Lua 原子脚本）
+            Long equipmentId = order.getEquipmentId();
+            String dateStr = date.format(DATE_FMT);
+
+            boolean success = bookingSlotService.tryOccupySlots(
+                equipmentId, dateStr, coveredSlots, quantity, maxCapacity);
+
+            if (!success) {
+                throw new RuntimeException("所选时间段设备 '" + equipment.getEquipmentName()
+                    + "' 可用数量不足，请选择其他时间段");
+            }
+
+            return SlotSegment.toSlotString(date, coveredSlots);
+
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException("时间槽预占失败: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * 释放订单已预占的时间槽
+     */
+    private void releaseOrderSlots(ResOrder order) {
+        try {
+            String slotInfo = order.getSlotInfo();
+            if (slotInfo == null || slotInfo.isEmpty()) {
+                return;
+            }
+            SlotSegment.SlotRange range = SlotSegment.parseSlotString(slotInfo);
+            if (range == null) {
+                return;
+            }
+            int quantity = order.getQuantity() != null ? order.getQuantity() : 1;
+            String dateStr = range.date.format(DATE_FMT);
+
+            bookingSlotService.releaseSlots(
+                order.getEquipmentId(), dateStr, range.slotIndices, quantity);
+        } catch (Exception e) {
+            log.error("释放时间槽失败, orderId={}", order.getOrderId(), e);
+        }
+    }
+
+    // ==================== 缓存辅助方法 ====================
+
+    private void deleteOrderCache(Long orderId) {
+        try {
+            redisCache.deleteObject(CacheConstants.RES_ORDER_KEY + orderId);
+        } catch (Exception e) {
+            log.error("删除订单缓存失败, orderId={}", orderId, e);
+        }
+    }
+
+    /**
+     * 每日缓存一致性校验与修复：比对 DB 与 Redis 中的订单数据，若不一致则删除缓存使其下次查询时从 DB 重新加载
+     */
+    public void repairCacheConsistency() {
+        try {
+            // 查询所有订单ID
+            List<ResOrder> allOrders = resOrderMapper.selectResOrderList(new ResOrder());
+            for (ResOrder dbOrder : allOrders) {
+                try {
+                    String cacheKey = CacheConstants.RES_ORDER_KEY + dbOrder.getOrderId();
+                    ResOrder cached = redisCache.getCacheObject(cacheKey);
+                    if (cached == null) {
+                        continue;
+                    }
+                    // 对比 version 判断是否一致
+                    if (!dbOrder.getVersion().equals(cached.getVersion())) {
+                        redisCache.deleteObject(cacheKey);
+                        log.info("缓存不一致已修复, orderId={}", dbOrder.getOrderId());
+                    }
+                } catch (Exception e) {
+                    log.error("校验订单缓存失败, orderId={}", dbOrder.getOrderId(), e);
+                }
+            }
+        } catch (Exception e) {
+            log.error("缓存一致性校验任务执行失败", e);
+        }
+    }
+
+    private static final org.slf4j.Logger log =
+        org.slf4j.LoggerFactory.getLogger(ResOrderServiceImpl.class);
 }

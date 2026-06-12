@@ -2,6 +2,9 @@ package com.ruoyi.equipment.order.controller;
 
 import java.util.List;
 import java.util.Map;
+
+import com.ruoyi.equipment.order.service.IBookingSlotService;
+import com.ruoyi.equipment.order.util.SlotSegment;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,6 +47,9 @@ public class ResOrderController extends BaseController
 
     @Autowired
     private OrderMsgTask orderMsgTask;
+
+    @Autowired
+    private IBookingSlotService bookingSlotService;
 
     /**
      * 查询预约订单列表
@@ -250,5 +256,34 @@ public class ResOrderController extends BaseController
     {
         int result = orderMsgTask.urgeReturn(orderId);
         return result > 0 ? success("催还消息已发送") : error("催还失败，请检查订单状态");
+    }
+
+    /**
+     * 查询设备指定日期的所有时间槽占用情况
+     *
+     * @param equipmentId 设备ID
+     * @param date        日期 (yyyy-MM-dd)
+     * @return 各槽位的占用数量列表 [{slotIndex, startTime, endTime, occupancy}]
+     */
+    @GetMapping("/slotOccupancy")
+    public AjaxResult slotOccupancy(Long equipmentId, String date)
+    {
+        if (equipmentId == null || date == null) {
+            return error("设备ID和日期不能为空");
+        }
+        List<Map<String, Object>> slots = new java.util.ArrayList<>();
+        int maxSlots = SlotSegment.MAX_SLOTS_PER_DAY;
+        int validSlots = SlotSegment.getSlotIndex(SlotSegment.DAY_END);
+
+        for (int i = 0; i < validSlots; i++) {
+            int occupancy = bookingSlotService.getSlotOccupancy(equipmentId, date, i);
+            Map<String, Object> slot = new java.util.HashMap<>();
+            slot.put("slotIndex", i);
+            slot.put("startTime", SlotSegment.getSlotStartTime(i).toString());
+            slot.put("endTime", SlotSegment.getSlotEndTime(i).toString());
+            slot.put("occupancy", occupancy);
+            slots.add(slot);
+        }
+        return success(slots);
     }
 }

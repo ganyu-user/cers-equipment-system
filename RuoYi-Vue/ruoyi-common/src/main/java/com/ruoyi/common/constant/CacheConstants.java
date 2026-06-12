@@ -41,4 +41,19 @@ public class CacheConstants
      * 登录账户密码错误次数 redis key
      */
     public static final String PWD_ERR_CNT_KEY = "pwd_err_cnt:";
+
+    /**
+     * 预约时间槽占用计数 redis key
+     */
+    public static final String RES_SLOT_KEY = "res:slot:";
+
+    /**
+     * 预约时间槽分布式锁 redis key
+     */
+    public static final String RES_SLOT_LOCK_KEY = "res:slot:lock:";
+
+    /**
+     * 预约订单缓存 redis key
+     */
+    public static final String RES_ORDER_KEY = "res:order:";
 }

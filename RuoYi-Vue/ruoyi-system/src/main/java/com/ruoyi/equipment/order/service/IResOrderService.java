@@ -39,4 +39,6 @@ public interface IResOrderService
     public int verifyReturn(Long orderId, List<Map<String, Object>> verifyDetails);
 
     public List<Map<String, Object>> getReturnDetailList(Long orderId);
+
+    public void repairCacheConsistency();
 }

@@ -2,6 +2,7 @@ package com.ruoyi.equipment.order.domain;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
+
 import com.ruoyi.common.annotation.Excel;
 import com.ruoyi.common.core.domain.BaseEntity;
 
@@ -107,6 +108,12 @@ public class ResOrder extends BaseEntity
 
     /** 设备追踪类型（非数据库字段，用于前端判断） */
     private String trackUnit;
+
+    /** 预约时间槽信息（如 "2026-06-12:4,5,6,7"） */
+    private String slotInfo;
+
+    /** 乐观锁版本号 */
+    private Integer version;
 
     public Long getOrderId()
     {
@@ -358,6 +365,26 @@ public class ResOrder extends BaseEntity
         this.trackUnit = trackUnit;
     }
 
+    public String getSlotInfo()
+    {
+        return slotInfo;
+    }
+
+    public void setSlotInfo(String slotInfo)
+    {
+        this.slotInfo = slotInfo;
+    }
+
+    public Integer getVersion()
+    {
+        return version;
+    }
+
+    public void setVersion(Integer version)
+    {
+        this.version = version;
+    }
+
     @Override
     public String toString() {
         return new ToStringBuilder(this,ToStringStyle.MULTI_LINE_STYLE)
@@ -386,6 +413,8 @@ public class ResOrder extends BaseEntity
             .append("rejectReason", getRejectReason())
             .append("returnStatus", getReturnStatus())
             .append("trackUnit", getTrackUnit())
+            .append("slotInfo", getSlotInfo())
+            .append("version", getVersion())
             .append("createBy", getCreateBy())
             .append("createTime", getCreateTime())
             .append("updateBy", getUpdateBy())

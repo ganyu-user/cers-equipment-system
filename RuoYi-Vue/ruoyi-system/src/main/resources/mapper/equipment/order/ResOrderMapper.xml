@@ -28,12 +28,14 @@
         <result property="phone"            column="phone"              />
         <result property="actualReturnTime" column="actual_return_time" />
         <result property="trackUnit"        column="track_unit"         />
+        <result property="slotInfo"        column="slot_info"         />
         <result property="returnStatus"     column="return_status"     />
         <result property="createBy"         column="create_by"         />
         <result property="createTime"       column="create_time"       />
         <result property="updateBy"         column="update_by"         />
         <result property="updateTime"       column="update_time"       />
         <result property="remark"           column="remark"            />
+        <result property="version"          column="version"           />
     </resultMap>
 
     <sql id="selectResOrderVo">
@@ -42,6 +44,7 @@
                r.quantity, r.expect_return_time, r.actual_return_time,
                r.assigned_unit_codes, r.approver_id, r.approver_name,
                r.approve_time, r.reject_reason, r.return_status,
+               r.slot_info, r.version,
                r.create_by, r.create_time, r.update_by, r.update_time, r.remark
         from res_order r
         left join sys_user u on r.user_id = u.user_id
@@ -94,7 +97,9 @@
             <if test="phone != null and phone != ''">phone,</if>
             <if test="actualReturnTime != null">actual_return_time,</if>
             <if test="returnStatus != null">return_status,</if>
+            <if test="slotInfo != null and slotInfo != ''">slot_info,</if>
             <if test="remark != null">remark,</if>
+            version,
             <if test="createBy != null">create_by,</if>
             <if test="createTime != null">create_time,</if>
             <if test="updateBy != null">update_by,</if>
@@ -116,7 +121,9 @@
             <if test="phone != null and phone != ''">#{phone},</if>
             <if test="actualReturnTime != null">#{actualReturnTime},</if>
             <if test="returnStatus != null">#{returnStatus},</if>
+            <if test="slotInfo != null and slotInfo != ''">#{slotInfo},</if>
             <if test="remark != null">#{remark},</if>
+            1,
             <if test="createBy != null">#{createBy},</if>
             <if test="createTime != null">#{createTime},</if>
             <if test="updateBy != null">#{updateBy},</if>
@@ -146,11 +153,13 @@
             <if test="phone != null and phone != ''">phone = #{phone},</if>
             <if test="actualReturnTime != null">actual_return_time = #{actualReturnTime},</if>
             <if test="returnStatus != null">return_status = #{returnStatus},</if>
+            <if test="slotInfo != null">slot_info = #{slotInfo},</if>
             <if test="remark != null">remark = #{remark},</if>
             <if test="updateBy != null">update_by = #{updateBy},</if>
             <if test="updateTime != null">update_time = #{updateTime},</if>
+            version = version + 1,
         </trim>
-        where order_id = #{orderId}
+        where order_id = #{orderId} and version = #{version}
     </update>
 
     <delete id="deleteResOrderById" parameterType="Long">
